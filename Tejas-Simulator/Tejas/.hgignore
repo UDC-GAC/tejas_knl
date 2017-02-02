@@ -1,0 +1,16 @@
+
+syntax: regexp
+^src/simulator/config/config\.xml$
+syntax: regexp
+^src/emulator/pin/obj-comm$
+syntax: regexp
+^src/emulator/pin/obj-pin$
+syntax: regexp
+syntax: regexp
+^src/simulator/config/config\.xml$
+syntax: regexp
+^bin/.*$
+syntax: regexp
+.*\.swp
+syntax: regexp
+^.*log.*$
