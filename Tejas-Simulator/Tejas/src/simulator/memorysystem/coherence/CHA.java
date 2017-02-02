@@ -38,9 +38,6 @@ public class CHA extends Cache implements Coherence {
 	    //cacheParameters.isDirectory = true;
 		super(cacheName, id, cacheParameters, containingMemSys);		
 		MemorySystem.coherenceNameMappings.put(cacheName, this);
-		//System.out.println("Initializing CHA:\n - " + cacheName);
-		//System.out.println("- " + id);
-		//System.out.println("Initializing CHA:\n - " + cacheName);
 	}
 
 	public void writeHit(long addr, Cache c) {
