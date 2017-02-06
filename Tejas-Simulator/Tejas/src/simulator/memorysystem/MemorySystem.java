@@ -77,7 +77,7 @@ public class MemorySystem
 	for(CacheConfig config : SystemConfig.sharedCacheConfigs) {
 	    if (config.isDirectory) {
 		Cache c = null;
-		c = new CHA(token + "[" + t + "]", 0, config, null);
+		c = new CHA(token + "[" + t + "]", t, config, null);
 		c.setComInterface(comInterface);
 		return (Coherence)c;
 	    }

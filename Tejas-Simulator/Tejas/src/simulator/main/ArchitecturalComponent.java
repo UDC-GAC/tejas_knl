@@ -170,6 +170,7 @@ public class ArchitecturalComponent {
 			    Cache c = MemorySystem.createSharedCacheCores("L2", t, comInterface);
 			    Coherence cha = MemorySystem.createCHA("CHA", t++, comInterface);
 			    c.setCoherence(cha);
+			    SystemConfig.chaList.add(cha);
 			} else if(nextElementToken.equals("-")) {
 			    //do nothing
 			} else {

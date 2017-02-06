@@ -232,7 +232,7 @@ public class Cache extends SimulationElement {
 			}
 	
 			case EvictCacheLine: {
-				updateStateOfCacheLine(addr, MESI.INVALID);
+				updateStateOfCacheLine(addr, MESIF.INVALID);
 				break;
 			}
 			
@@ -286,7 +286,7 @@ public class Cache extends SimulationElement {
 			// c1 however does not have the line
 			noteInvalidState("shared to exclusive for a line that does not exist. addr : " + addr + ". cache : " + this);
 		}
-		updateStateOfCacheLine(addr, MESI.EXCLUSIVE);
+		updateStateOfCacheLine(addr, MESIF.EXCLUSIVE);
 	}
 
 	protected void handleDirectoryCachelineForwardRequest(long addr, Cache cache) {
@@ -294,7 +294,7 @@ public class Cache extends SimulationElement {
 				cache.getEventQueue(), 0, this, cache,
 				RequestType.Mem_Response, addr);
 		
-		updateStateOfCacheLine(addr, MESI.SHARED);
+		updateStateOfCacheLine(addr, MESIF.SHARED);
 
 		this.sendEvent(event);
 	}
@@ -353,7 +353,7 @@ public class Cache extends SimulationElement {
 				sendRequestToNextLevel(addr, RequestType.Cache_Write);
 			}
 			
-			if( (cl.getState() == MESI.SHARED || cl.getState() == MESI.EXCLUSIVE)  && 
+			if( (cl.getState() == MESIF.SHARED || cl.getState() == MESIF.EXCLUSIVE)  && 
 					(mycoherence!=null)) {
 				handleCleanToModified(addr, event);
 			}
@@ -560,7 +560,7 @@ public class Cache extends SimulationElement {
 		noOfRequests += numPendingEvents;
 		noOfAccesses += 1 + numPendingEvents;
 
-		CacheLine evictedLine = this.fill(addr, MESI.SHARED);
+		CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
 		handleEvictedLine(evictedLine);
 		processEventsInMSHR(addr);		
 	}
@@ -580,7 +580,7 @@ public class Cache extends SimulationElement {
 					CacheLine cl = accessValid(addr);
 					
 					if(cl!=null) {
-						updateStateOfCacheLine(addr, MESI.MODIFIED);
+						updateStateOfCacheLine(addr, MESIF.MODIFIED);
 						writeEvent = event;
 					} else {
 						misc.Error.showErrorAndExit("Cache write expects a line here : " + event);
@@ -591,7 +591,7 @@ public class Cache extends SimulationElement {
 				
 				case DirectoryEvictedFromCoherentCache:
 				case EvictCacheLine: {
-					updateStateOfCacheLine(addr, MESI.INVALID);
+					updateStateOfCacheLine(addr, MESIF.INVALID);
 					addUnprocessedEventsToEventQueue(missList);
 					
 					processEventsInPendingList();
@@ -615,7 +615,7 @@ public class Cache extends SimulationElement {
 	}
 
 	protected void handleEvictedLine(CacheLine evictedLine) {
-		if (evictedLine != null && evictedLine.getState() != MESI.INVALID) {
+		if (evictedLine != null && evictedLine.getState() != MESIF.INVALID) {
 			if(mshr.isAddrInMSHR(evictedLine.getAddress())) {
 				misc.Error.showErrorAndExit("evicting locked line : " + evictedLine + ". cache : " + this);
 			}
@@ -699,7 +699,7 @@ public class Cache extends SimulationElement {
 
 	public CacheLine accessValid(long addr) {
 		CacheLine cl = access(addr);
-		if (cl != null && cl.getState() != MESI.INVALID) {
+		if (cl != null && cl.getState() != MESIF.INVALID) {
 			return cl;
 		} else {
 			return null;
@@ -755,7 +755,7 @@ public class Cache extends SimulationElement {
 		return cl;
 	}
 
-	public CacheLine fill(long addr, MESI stateToSet) // Returns a copy of the
+	public CacheLine fill(long addr, MESIF stateToSet) // Returns a copy of the
 														// evicted line
 	{
 		CacheLine evictedLine = null;
@@ -844,19 +844,19 @@ public class Cache extends SimulationElement {
 		return cachePower;
 	}
 
-	public void updateStateOfCacheLine(long addr, MESI newState) {
+	public void updateStateOfCacheLine(long addr, MESIF newState) {
 		CacheLine cl = this.access(addr);
 		
 		if (cl != null) {
 
 			cl.setState(newState);
 			
-			if(newState==MESI.INVALID && mshr.isAddrInMSHR(addr)) {
+			if(newState==MESIF.INVALID && mshr.isAddrInMSHR(addr)) {
 				misc.Error.showErrorAndExit("Cannot invalidate a locked line. Addr : " + addr + ". Cache : " + this);
 			}
 
 			
-			if (newState == MESI.INVALID) {
+			if (newState == MESIF.INVALID) {
 				if (isBelowCoherenceLevel()) {
 					getPrevLevelCoherence().evictedFromSharedCache(addr, this);
 				} else {
@@ -1022,7 +1022,7 @@ public class Cache extends SimulationElement {
 			if(mshr.isAddrInMSHR(ll.getAddress())==false) {
 				return true;
 			}
-//			else if (ll.getState() == MESI.INVALID) {
+//			else if (ll.getState() == MESIF.INVALID) {
 //				return true;
 //			} 
 		}

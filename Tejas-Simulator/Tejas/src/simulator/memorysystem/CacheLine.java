@@ -29,7 +29,7 @@ public class CacheLine implements Cloneable
 	private long tag;
 	private long timestamp;
 	private long address;
-	private MESI state = MESI.INVALID;
+	private MESIF state = MESIF.INVALID;
 	private boolean isDirectory = false;
 	
 	private LinkedList<Cache> sharers = null;
@@ -37,7 +37,7 @@ public class CacheLine implements Cloneable
 	public CacheLine(boolean isDirectory)
 	{
 		this.setTag(-1);
-		this.setState(MESI.INVALID);
+		this.setState(MESIF.INVALID);
 		this.setTimestamp(0);
 		this.setAddress(-1);
 		this.isDirectory = isDirectory;
@@ -74,14 +74,14 @@ public class CacheLine implements Cloneable
 	
 	public void addSharer(Cache c) {
 		checkIsDirectory();
-		if(this.state==MESI.INVALID) {
+		if(this.state==MESIF.INVALID) {
 			misc.Error.showErrorAndExit("Unholy mess !!");
 		}
 		
 		// You cannot add a new sharer for a modified entry.
 		// For same entry, if you try to add an event, it was because the cache sent multiple requests for 
 		// the same cache line which triggered the memResponse multiple times. For the time being, just ignore this hack.
-		if(this.state==MESI.MODIFIED && this.sharers.size()>0 && this.sharers.get(0)!=c) {
+		if(this.state==MESIF.MODIFIED && this.sharers.size()>0 && this.sharers.get(0)!=c) {
 			misc.Error.showErrorAndExit("You cannot have multiple owners for a modified state !!\n" +
 					"currentOwner : " + getOwner().containingMemSys.getCore().getCore_number() + 
 					"\nnewOwner : " + c.containingMemSys.getCore().getCore_number() + 
@@ -91,7 +91,7 @@ public class CacheLine implements Cloneable
 		// You cannot add a new sharer for exclusive entry.
 		// For same entry, if you try to add an event, it was because the cache sent multiple requests for 
 		// the same cache line which triggered the memResponse multiple times. For the time being, just ignore this hack.
-		if(this.state==MESI.EXCLUSIVE && this.sharers.size()>0 && this.sharers.get(0)!=c) {
+		if(this.state==MESIF.EXCLUSIVE && this.sharers.size()>0 && this.sharers.get(0)!=c) {
 			misc.Error.showErrorAndExit("You cannot have multiple owners for exclusive state !!\n" +
 					"currentOwner : " + getOwner().containingMemSys.getCore().getCore_number() + 
 					"\nnewOwner : " + c.containingMemSys.getCore().getCore_number() + 
@@ -149,7 +149,7 @@ public class CacheLine implements Cloneable
 
 
 	public boolean isValid() {
-		if (state != MESI.INVALID)
+		if (state != MESIF.INVALID)
 			return true;
 		else
 			return false;
@@ -164,7 +164,7 @@ public class CacheLine implements Cloneable
 	}
 
 	public boolean isModified() {
-		if (state == MESI.MODIFIED)
+		if (state == MESIF.MODIFIED)
 			return true;
 		else 
 			return false;
@@ -174,11 +174,11 @@ public class CacheLine implements Cloneable
 		this.modified = modified;
 	}
 */
-	public MESI getState() {
+	public MESIF getState() {
 		return state;
 	}
 
-	public void setState(MESI state) {
+	public void setState(MESIF state) {
 		this.state = state;
 	}
 

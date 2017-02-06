@@ -391,6 +391,20 @@ public class XMLParser
 		    System.out.println("MCDRAM not configured!!");
 		}
 
+		if (SystemConfig.knl) {
+		    String clusterMode = getImmediateString("ClusterMode", systemElmnt);
+		    if (clusterMode.equals("SNC")) {
+			SystemConfig.clusterMode = SystemConfig.ClusterMode.SNC;	
+		    }
+		    if (clusterMode.equals("Hemi")) {
+			SystemConfig.clusterMode = SystemConfig.ClusterMode.Hemi;	
+		    }
+		    if (clusterMode.equals("A2A")) {
+			SystemConfig.clusterMode = SystemConfig.ClusterMode.A2A;	
+		    }
+		    
+		}
+
 		SystemConfig.mainMemoryLatency = Integer.parseInt(getImmediateString("MainMemoryLatency", systemElmnt));
 		SystemConfig.mcdramLatency = Integer.parseInt(getImmediateString("MCDRAMLatency", systemElmnt));
 		

@@ -23,12 +23,18 @@ package config;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import memorysystem.coherence.Coherence;
+
 import generic.PortType;
 
 public class SystemConfig 
 {
 	public static enum Interconnect {
 		Bus, Noc
+	}
+
+        public static enum ClusterMode {
+	        SNC,Hemi,A2A
 	}
 
 	public static int NoOfCores;
@@ -69,6 +75,7 @@ public class SystemConfig
 
 	
 	public static Interconnect interconnect;
+        public static ClusterMode clusterMode;
 	public static EnergyConfig  mainMemoryControllerPower;
         public static EnergyConfig  mcdramControllerPower;
 	public static EnergyConfig  globalClockPower;
@@ -78,6 +85,16 @@ public class SystemConfig
         public static long mcdramSize = -1; //todo
         public static long ddrAddr = -1;
         public static long ddrSize = -1; //todo 
+
+        public static Vector<Coherence> chaList = new Vector<Coherence>();
+        public static int[] mappingSNC = {0,1,2,6,7,8,12,13,14,
+					  3,4,5,9,10,11,15,16,17,
+					  18,19,20,24,25,26,30,31,32,
+					  21,22,23,27,28,29,33,34,35};
+        public static int[] mappingHemi = {0,1,2,6,7,8,12,13,14,18,19,20,24,25,26,30,31,32,
+					   3,4,5,9,10,11,15,16,17,21,22,23,27,28,29,33,34,35};
+        public static int[] mappingA2A = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,
+					  18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35};
 
         public static String addrFilePath = "/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/addr.txt";
  	

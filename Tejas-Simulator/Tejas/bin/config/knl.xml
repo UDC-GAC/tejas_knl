@@ -54,6 +54,8 @@
 		</MainMemory>
 
 		<KNL>true</KNL>
+		<!-- SNC,Hemi,A2A -->
+		<ClusterMode>SNC</ClusterMode>
 
 		<MCDRAMConfig>
 			<MCDRAMControllerToUse>SIMPLE</MCDRAMControllerToUse>       
