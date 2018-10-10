@@ -23,7 +23,8 @@ public class OutOrderCoreMemorySystem extends CoreMemorySystem {
 		containingExecEngine = (OutOrderExecutionEngine)core.getExecEngine();
 	}
 	
-
+	int sents = 0;
+	int rec = 0;
 	
 	//To issue the request to instruction cache
 	public void issueRequestToInstrCache(long address)
@@ -32,6 +33,8 @@ public class OutOrderCoreMemorySystem extends CoreMemorySystem {
 		
 		AddressCarryingEvent addressEvent = new AddressCarryingEvent(getCore().getEventQueue(),
 			tlbMissPenalty, this, iCache, RequestType.Cache_Read, address);
+
+	        addressEvent.setCoreId(getCore().getCore_number());
 
 		//attempt issue to lower level cache
 		this.iCache.getPort().put(addressEvent);
@@ -71,7 +74,10 @@ public class OutOrderCoreMemorySystem extends CoreMemorySystem {
 	{
 		AddressCarryingEvent addressEvent = new AddressCarryingEvent(getCore().getEventQueue(),
 			0, this, l1Cache, requestType, address);		
-		
+ 
+		addressEvent.setCoreId(getCore().getCore_number());
+		//System.out.println("OOOCORE core " + this.coreID + " sending request with address " + address + " to L1 " + sents++);
+
 		if(l1Cache.isBusy()) {
 			return false;
 		}
@@ -113,7 +119,6 @@ public class OutOrderCoreMemorySystem extends CoreMemorySystem {
 		
 		AddressCarryingEvent memResponse = (AddressCarryingEvent) event;
 		long address = memResponse.getAddress();
-		
 		// Unified cache scenario
 		if(iCache==l1Cache)
 		{
@@ -130,6 +135,7 @@ public class OutOrderCoreMemorySystem extends CoreMemorySystem {
 		//if response comes from l1Cache, inform memunit
 		else if(memResponse.getRequestingElement() == l1Cache)
 		{
+			//System.out.println("OOOCORE core " + this.coreID + " receiving request with address " + address + " from core " + event.coreId + " " + rec++);
 			lsqueue.handleMemResponse(address);
 		}
 		

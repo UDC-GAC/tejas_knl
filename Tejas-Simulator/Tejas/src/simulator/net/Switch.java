@@ -45,6 +45,7 @@ public class Switch extends SimulationElement{
 	public ALGO rAlgo;
 	protected int availBuff;           //available number of buffers
 	public int hopCounters;
+        public int numCollisions = 0;
 	public static int totalBufferAccesses;
 	//0 - up ; 1 - right ; 2- down ; 3- left (clockwise) 
 	
@@ -76,6 +77,10 @@ public class Switch extends SimulationElement{
 		this.range = new int[2]; // used in fat tree
 		this.hopCounters = 0;
 	}
+
+    public void collision() {
+	numCollisions++;
+    }
 	
 	public int nextIdbutterflyOmega(String binary)
 	{
@@ -111,6 +116,7 @@ public class Switch extends SimulationElement{
 				totalBufferAccesses++;
 				return true;
 			}
+		//numCollisions++;
 		return false;
 	}
 	/*******************************************************
@@ -146,6 +152,7 @@ public class Switch extends SimulationElement{
 				}
 			}
 		}
+		//numCollisions++;
 		return false;
 	}
 	/*******************************************************

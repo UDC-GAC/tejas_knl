@@ -9,11 +9,13 @@ public class MSHR {
         private int mshrSize;
         private LinkedList<LinkedList<AddressCarryingEvent>> missRegister;
         private int blockSizeBits;
+        private Cache containingCache;
         
-        public MSHR(int mshrMaxSize, int blockSizeBits) {
+        public MSHR(int mshrMaxSize, int blockSizeBits, Cache containingCache) {
                 this.mshrMaxSize = mshrMaxSize;
                 missRegister = new LinkedList<LinkedList<AddressCarryingEvent>>();
                 this.blockSizeBits = blockSizeBits;
+                this.containingCache = containingCache;
         }
 
         public void addToMSHR(AddressCarryingEvent event) {
@@ -60,6 +62,11 @@ public class MSHR {
                 return mshrSize==0;
         }
 
+        public boolean isMSHRFull(long addr) {
+            if (mshrSize >= mshrMaxSize) return true;
+            return (containingCache.numberOfLinesOfSetInMSHR(addr) >= containingCache.assoc - 1);
+        }
+        
         public boolean isMSHRFull() {
                 return (mshrSize >= mshrMaxSize);
         }

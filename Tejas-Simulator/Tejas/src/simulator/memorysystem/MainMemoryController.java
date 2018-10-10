@@ -11,26 +11,41 @@ import java.io.IOException;
 import config.EnergyConfig;
 import config.SystemConfig;
 
+import main.ArchitecturalComponent;
+
 public class MainMemoryController extends SimulationElement
 {
 	long numAccesses;
-	
+	int id = 0;
+        boolean mcdram = false;
+        boolean count = false;
+        public int[] accesses = new int[SystemConfig.NoOfCores];
+
 	public MainMemoryController() {
 		super(SystemConfig.mainMemPortType,
-				SystemConfig.mainMemoryAccessPorts,
-				SystemConfig.mainMemoryPortOccupancy,
-				SystemConfig.mainMemoryLatency,
-				SystemConfig.mainMemoryFrequency
-				);
+                      SystemConfig.mainMemoryAccessPorts,
+                      SystemConfig.mainMemoryPortOccupancy,
+                      SystemConfig.mainMemoryLatency,
+                      SystemConfig.mainMemoryFrequency
+                      );
+		for (int i=0;i<SystemConfig.nTiles;i++) {
+		    accesses[i] = 0;
+		}
+
 	}
 
-        public MainMemoryController(boolean knl) {
+        public MainMemoryController(boolean knl, int id) {
 		super(SystemConfig.mcdramPortType,
 				SystemConfig.mcdramAccessPorts,
 				SystemConfig.mcdramPortOccupancy,
 				SystemConfig.mcdramLatency,
 				SystemConfig.mcdramFrequency
 				);
+		this.mcdram = knl;
+		this.id = id;
+		for (int i=0;i<SystemConfig.nTiles;i++) {
+		    accesses[i] = 0;
+		}
 	}
 	
 	public void handleEvent(EventQueue eventQ, Event event)
@@ -47,7 +62,11 @@ public class MainMemoryController extends SimulationElement
 		{
 			//Just to tell the requesting things that the write is completed
 		}
-		
+		System.out.println("coreId = " + event.coreId + "\tmcdramId = " + this.id);
+		if ((event.coreId>=0)) {
+		    accesses[event.coreId]++;
+		}
+
 		incrementNumAccesses();
 	}
 	

@@ -75,6 +75,8 @@ OS_THREAD_ID father_id = INVALID_OS_THREAD_ID;
 #define FREE "free"
 #endif
 
+#define ADDR_PATH "/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/addr.txt" 
+
 // Defining  command line arguments
 KNOB<UINT64>   KnobMap(KNOB_MODE_WRITEONCE,       "pintool",
     "map", "1", "Maps");
@@ -130,6 +132,7 @@ long *currentId;
 int MaxNumActiveThreads;
 
 // added by markos
+BOOL mcdramSet = false;
 BOOL searchMalloc = false;
 BOOL mcdramMalloc = false;
 BOOL ddrMalloc    = false;
@@ -430,7 +433,7 @@ VOID RegValRead(THREADID tid,VOID * ip,REG* _reg)
 	uint64_t nip = MASK & (uint64_t)ip;
 	uint64_t _nreg = MASK & (uint64_t)_reg;
 	tid= findThreadMapping(tid);
-	while (tst->analysisFn(tid,nip,6,_nreg)== -1) {
+	while (tst->analysisFn(tid,nip,REGREAD,_nreg)== -1) {
 		PIN_Yield();
 	}
 }
@@ -447,7 +450,7 @@ VOID RegValWrite(THREADID tid,VOID * ip,REG* _reg)
 	checkSum+=7;
 	uint64_t nip = MASK & (uint64_t)ip;
 	uint64_t _nreg = MASK & (uint64_t)_reg;
-	while (tst->analysisFn(tid,nip,7,_nreg)== -1) {
+	while (tst->analysisFn(tid,nip,REGWRITE,_nreg)== -1) {
 		PIN_Yield();
 	}
 }
@@ -660,6 +663,27 @@ VOID funcHandler(CHAR* name, int a, int b, int c) {
 /* MALLOC Analysis routines                                              */
 /* ===================================================================== */
 
+VOID ResetStats(char * name, ADDRINT size)
+{
+  ofstream addrfile;
+  addrfile.open(ADDR_PATH, ofstream::out | ofstream::app);
+  if (addrfile.is_open()) {
+    addrfile << "RESET_STATS" << endl;
+    addrfile.close();
+  }
+}
+
+VOID DumpStats(char * name, ADDRINT size)
+{
+  ofstream addrfile;
+  addrfile.open(ADDR_PATH, ofstream::out | ofstream::app);
+  if (addrfile.is_open()) {
+    addrfile << "DUMP_STATS" << endl;
+    addrfile.close();
+  }
+}
+
+
 VOID SetMCmalloc(char * name, ADDRINT size)
 {
   searchMalloc = true;
@@ -684,21 +708,23 @@ VOID MallocBefore(CHAR * name, ADDRINT size)
 VOID MallocAfter(ADDRINT ret)
 {
   ofstream addrfile;
-  addrfile.open("/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/addr.txt", ofstream::out | ofstream::app);
+  addrfile.open(ADDR_PATH, ofstream::out | ofstream::app);
   if (searchMalloc) {
     if (ddrMalloc) {
       cout << "ddrMalloc returns " << ret << endl;
       ddrMalloc = false;
       if (addrfile.is_open())
-	addrfile << "DDR\t" << ddrSize << "\t";
+    	  addrfile << "DDR\t" << ddrSize << "\t";
       else
-	cout << "unable to open file!" << endl;
+    	  cout << "unable to open file!" << endl;
     }
     if (mcdramMalloc) {
       cout << "mcdramMalloc returns " << ret << endl;
       mcdramMalloc = false;
-      if (addrfile.is_open())
-	addrfile << "MCDRAM\t" << mcdramSize << "\t";
+      if (addrfile.is_open()) {
+		addrfile << "MCDRAM\t" << mcdramSize << "\t";
+		//mcdramSet = true;
+      }
     }
     searchMalloc = false;
   } else {
@@ -707,10 +733,12 @@ VOID MallocAfter(ADDRINT ret)
   }
 
   if (addrfile.is_open())
-    {
-      addrfile << ret << endl;
-      addrfile.close();
-    }
+	{
+	  // ADDRESS VALUE
+	  addrfile << ret << endl;
+	  addrfile.close();
+	  cout << "closing file..." << endl;
+	}
 
 }
 
@@ -828,6 +856,9 @@ VOID FlagRtn(RTN rtn, VOID* v) {
 			 IARG_PTR, "mc_malloc",
 			 IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
 			 IARG_END);
+	  RTN_InsertCall(rtn, IPOINT_AFTER, (AFUNPTR)MallocAfter,
+			   IARG_FUNCRET_EXITPOINT_VALUE,IARG_END);
+
      	  RTN_Close(rtn);
 	  return;
 	}
@@ -940,7 +971,7 @@ INT32 Usage() {
 int main(int argc, char * argv[]) {
 
         ofstream addrfile;
-        addrfile.open("/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/addr.txt", ofstream::out | ofstream::trunc);
+        addrfile.open(ADDR_PATH, ofstream::out | ofstream::trunc);
 	addrfile.close();
 	// Knobs get initialized only after initializing PIN
         

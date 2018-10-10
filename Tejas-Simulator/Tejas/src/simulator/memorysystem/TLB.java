@@ -105,7 +105,7 @@ public class TLB extends SimulationElement
 			AddressCarryingEvent addressEvent = new AddressCarryingEvent(getCore().getEventQueue(), memoryPenalty, this, 
 					this, RequestType.Tlb_Miss_Response, pageID);
 			
-			
+			addressEvent.setCoreId(getCore().getCore_number());
 			this.getPort().put(addressEvent);
 									
 			//return pageID;

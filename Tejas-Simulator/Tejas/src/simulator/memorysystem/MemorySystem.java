@@ -120,7 +120,6 @@ public class MemorySystem
 	public static void createLinkBetweenCaches() {
 		for(Map.Entry<String, Cache> cacheListEntry :  cacheNameMappings.entrySet()) {
 			Cache c = cacheListEntry.getValue();
-			
 			// If the next level field has been set in the coreMemSys, do not set it again
 			if(c.nextLevel==null) {
 				createLinkToNextLevelCache(c);
@@ -145,20 +144,21 @@ public class MemorySystem
 		else
 		{
 			String nextLevelIdStrOrig = c.cacheConfig.nextLevelId;
-			
-			if(nextLevelIdStrOrig!=null && nextLevelIdStrOrig!="") {
-				int nextLevelId = getNextLevelId(cacheName, cacheId, nextLevelIdStrOrig);
-				nextLevelName += "[" + nextLevelId + "]";
-			} else {
-			    int t = 0;
-			    if ((cacheId % 2)==1) {
-				t = (cacheId-1)/2;
-			    } else {
-				t = cacheId/2;
-			    }
-			    nextLevelName += "[" + t + "]";
-			}
-			
+			int nextLevelId = getNextLevelIdKNL(cacheName, cacheId, nextLevelIdStrOrig);
+			nextLevelName += "[" + nextLevelId + "]";
+//			if(nextLevelIdStrOrig!=null && nextLevelIdStrOrig!="") {
+//				int nextLevelId = getNextLevelIdKNL(cacheName, cacheId, nextLevelIdStrOrig);
+//				nextLevelName += "[" + nextLevelId + "]";
+//			} else {
+//			    int t = 0;
+//			    if ((cacheId % 2)==1) {
+//				t = (cacheId-1)/2;
+//			    } else {
+//				t = cacheId/2;
+//			    }
+//			    nextLevelName += "[" + t + "]";
+//			}
+//			
 			nextLevelCache = cacheNameMappings.get(nextLevelName);
 		}
 		
@@ -166,10 +166,24 @@ public class MemorySystem
 			misc.Error.showErrorAndExit("Inside " + cacheName + ".\n" +
 				"Could not find the next level cache. Name : " + nextLevelName);
 		}
-		
+		//System.out.println("cache " + c.toString() + " connecting to " + nextLevelCache.toString());
 		c.createLinkToNextLevelCache(nextLevelCache);		
 	}
 	
+	private static int getNextLevelIdKNL(String cacheName, int cacheId, String nextLevelIdStrOrig) {
+		int tmp = 0;
+		for (int i = 0; i < SystemConfig.mappingCores.length; ++i) {
+			if ((SystemConfig.mappingCores[i] == cacheId) ||
+				(SystemConfig.mappingCores[i]+1 == cacheId)) {
+				tmp = i;
+				break;
+			}
+		}
+		//System.out.println("cache " + cacheId + " connecting to " + SystemConfig.mappingCHA[tmp]);
+		return SystemConfig.mappingCHA[tmp];
+	}
+
+	@SuppressWarnings("unused")
 	private static int getNextLevelId(String cacheName, int cacheId,
 			String nextLevelIdStrOrig) {
 		

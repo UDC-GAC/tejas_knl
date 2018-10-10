@@ -4,11 +4,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import config.EnergyConfig;
-
+import generic.Event;
 import memorysystem.AddressCarryingEvent;
 import memorysystem.Cache;
 
 public interface Coherence {
+	public abstract void readMiss(long addr, Event e, Cache c);
+	public abstract void writeHit(long addr, Event e, Cache c);
+	public abstract void writeMiss(long addr, Event e, Cache c);
 	public abstract void readMiss(long addr, Cache c);
 	public abstract void writeHit(long addr, Cache c);
 	public abstract void writeMiss(long addr, Cache c);

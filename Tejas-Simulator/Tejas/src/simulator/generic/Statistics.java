@@ -280,12 +280,41 @@ public class Statistics {
 			mcdramEnergy.printEnergyStats(outputFileWriter, "mcdramControllerEnergy.total");
 			totalEnergy.add(mcdramEnergy);
 
+
+			// FOR EACH MCDRAM, ACCESSES BY EACH CORE
+			mcdramControllerId = 0;
+			outputFileWriter.write("\n\n");
+			outputFileWriter.write("Accesses to each MCDRAM module by each core:\n==================\n");
+			for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
+				outputFileWriter.write("MCDRAMController[" + mcdramControllerId++ + "]:\n");
+				int[] accesses = mcdramController.accesses;
+				for (int k=0; k<mcdramController.accesses.length; k++) {
+				    outputFileWriter.write("\tCORE[" + k + "] = " + mcdramController.accesses[k]  + "\n");
+				}
+				outputFileWriter.write("====================\n");
+			}			
+			outputFileWriter.write("\n");
+
+
+			// FOR EACH MCDRAM, ACCESSES BY EACH CORE
+			outputFileWriter.write("Accesses from each core to each MCDRAM module:\n==================\n");
+			for(int c=0; c<SystemConfig.NoOfCores; c++) {
+			    outputFileWriter.write("CORE[" + c + "]:\n");
+			    int k = 0;
+			    for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
+				int[] accesses = mcdramController.accesses;
+				outputFileWriter.write("\tMCDRAM[" + k++ + "] = " + mcdramController.accesses[c]  + "\n");
+			    }			
+			    outputFileWriter.write("====================\n");
+			}
+			outputFileWriter.write("\n");
 			
+
 			// Coherence
 			EnergyConfig coherenceEnergy = new EnergyConfig(0, 0);						
 			int coherenceId = 0;
 			for(Coherence coherence : ArchitecturalComponent.coherences) {
-				String name = "Coherence[" + coherenceId + "]";
+				String name = "Access CHA[" + coherenceId + "]";
 				coherenceId++;
 				coherenceEnergy.add(coherence.calculateAndPrintEnergy(outputFileWriter, name));
 			}
@@ -415,7 +444,19 @@ public class Statistics {
 					 rout.calculateAndPrintEnergy(outputFileWriter, "router["+i+"]["+j+"]");
 				     }
 				}
-				
+				outputFileWriter.write("\n\ncollision:\n==============================\n");
+				for (int i=0; i<numRows; i++) {
+				     for (int j=0; j<numColumns; j++) {
+					 if ((j==0)||(j==7))
+					     continue;
+					 NocInterface nocInterface = (NocInterface) ((NOC)ArchitecturalComponent.getInterConnect()).getNetworkElements()[i][j];
+					 Router rout = nocInterface.getRouter();
+					 outputFileWriter.write("collisions[" + i + "][" + j + "] = " + rout.numCollisions +  "\n");
+				     }
+				}
+				outputFileWriter.write("\n\nNumber of hops:\n==============================\n");
+				outputFileWriter.write("\t\tControl hops: " + SystemConfig.controlHops +"\n");
+				outputFileWriter.write("\t\tData hops: " + SystemConfig.dataHops +"\n\n");
 			}
 			if(SimulationConfig.nucaType!=NucaType.NONE)
 			{

@@ -30,7 +30,7 @@ import java.util.Vector;
 import memorysystem.AddressCarryingEvent;
 import memorysystem.CacheLine;
 import memorysystem.CoreMemorySystem;
-import memorysystem.MESI;
+import memorysystem.MESIF;
 import config.CacheConfig;
 
 public class DNucaBank extends NucaCache implements NucaInterface
@@ -118,7 +118,7 @@ public class DNucaBank extends NucaCache implements NucaInterface
 				((DNucaBank) event.getRequestingElement()).getMyId(),
 				((DNucaBank) event.getRequestingElement()).getSetId());
 		//Migrate
-		cl.setState(MESI.INVALID); //Invalidation of block in current bank
+		cl.setState(MESIF.INVALID); //Invalidation of block in current bank
 		AddressCarryingEvent migrateEvent = new AddressCarryingEvent(this.getEventQueue(), 
 				0,
 				this,
@@ -228,7 +228,7 @@ public class DNucaBank extends NucaCache implements NucaInterface
 			}
 	
 			case EvictCacheLine: {
-				updateStateOfCacheLine(addr, MESI.INVALID);
+				updateStateOfCacheLine(addr, MESIF.INVALID);
 				break;
 			}
 			

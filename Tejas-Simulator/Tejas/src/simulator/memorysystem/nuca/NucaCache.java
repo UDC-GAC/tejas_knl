@@ -35,7 +35,7 @@ import memorysystem.AddressCarryingEvent;
 import memorysystem.Cache;
 import memorysystem.CacheLine;
 import memorysystem.CoreMemorySystem;
-import memorysystem.MESI;
+import memorysystem.MESIF;
 import memorysystem.MSHR;
 import net.ID;
 import net.NocInterface;
@@ -222,7 +222,7 @@ public class NucaCache extends Cache
 	}
 
 	public void fillAndSatisfyRequestsMigration(long addr, RequestType requestType) {
-		CacheLine evictedLine = this.fill(addr, MESI.SHARED);
+		CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
 		handleEvictedLine(evictedLine);
 		if(requestType == RequestType.Migrate_Block)
 		{

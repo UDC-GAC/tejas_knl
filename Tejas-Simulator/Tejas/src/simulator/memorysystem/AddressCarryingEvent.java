@@ -64,7 +64,10 @@ public class AddressCarryingEvent extends Event implements Cloneable
 	public void setAddress(long address) {
 		this.address = address;
 	}
-	
+
+        public void setCoreId(int coreId) {
+	        this.coreId = coreId;
+	}
 	
 	public void dump()
 	{

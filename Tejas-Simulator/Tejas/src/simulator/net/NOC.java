@@ -572,6 +572,37 @@ public class NOC extends InterConnect {
 		return memControllerRet;
 	}
 
+    // when KNL 
+    public MainMemoryDRAMController chooseMCDRAMmodule(long addr) {
+	MainMemoryDRAMController memControllerRet = null;
+	long index = 0;
+	
+	if (SystemConfig.clusterMode.equals(SystemConfig.ClusterMode.SNC)) {
+	    if ((SystemConfig.mcdramAddr != -1)&&(SystemConfig.mcdramAddr<=addr)) {
+	     	long q = ((addr-SystemConfig.mcdramAddr) >>> 32) % 4L;
+		long iface = ((addr-SystemConfig.mcdramAddr) >>> 6) % 2L;
+	     	index = iface + 2*(int)q;
+		System.out.println("quadrant: " + q + "; iface: " + iface + "; addr: " + addr + "; addr-mcdram: " + (addr-SystemConfig.mcdramAddr) + "; index: " + index);
+	    } else {
+		long q = (addr >>> 32) % 4L;
+		long iface = ((addr >>> 6) % 2L);
+		index = iface + 2*q;
+		System.out.println("quadrant: " + q + "; iface: " + iface + "; addr: " + addr + "; index: " + index);
+	    }
+	} else {
+	    if ((SystemConfig.mcdramAddr != -1)&&(SystemConfig.mcdramAddr<=addr)) {
+	     	index = ((addr-SystemConfig.mcdramAddr) >>> 6) % 8L;
+		//System.out.println("addr: " + addr + "; addr-mcdram: " + (addr-SystemConfig.mcdramAddr) + "; index: " + index);
+	    } else {
+		index = ((addr >>> 6) % 8L);
+		//System.out.println("addr: " + addr + "; index: " + index);
+	    }
+	}
+	memControllerRet = ArchitecturalComponent.mcdramControllers.get((int)index);
+	    
+	return memControllerRet;
+    }
+
 
 	public EnergyConfig calculateAndPrintEnergy(FileWriter outputFileWriter,
 			String name) {

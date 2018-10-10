@@ -66,6 +66,44 @@ public class RoutingAlgo{
 			return DIRECTION.LEFT;
 		return null;
 	}
+    /************************************************************************
+     * Method Name  : YXnextBank
+     * Purpose      : implementing XY routing algorithm
+     * Parameters   : current id, destination id, topology, number of rows and columns
+     * Return       : next direction
+     *************************************************************************/
+	public Vector<RoutingAlgo.DIRECTION> YXnextBank(ID current, ID destination, 
+			NOC.TOPOLOGY topology, int numRows, int numColums)
+	{	
+		//XYRouting for mesh,torus,ring,bus
+		// to find next bank ID
+	        
+		Vector<RoutingAlgo.DIRECTION> choices = new Vector<RoutingAlgo.DIRECTION>();
+		int x1,y1,x2,y2;
+		x1 = current.getx();
+		y1 = current.gety();
+		x2 = destination.getx();
+		y2 = destination.gety();
+		
+
+		if(x1 < x2){
+		    choices.add(DIRECTION.DOWN);
+		}
+		else if(x1 > x2){
+		    choices.add(DIRECTION.UP);
+		}
+
+
+		if(y1 < y2){
+		    choices.add(DIRECTION.RIGHT);
+	      	}
+		else if(y1 > y2){
+		    choices.add(DIRECTION.LEFT);
+		}
+
+		return choices;
+	}
+
 	/************************************************************************
      * Method Name  : XYnextBank
      * Purpose      : implementing XY routing algorithm
@@ -126,7 +164,7 @@ public class RoutingAlgo{
 					choices.add(DIRECTION.DOWN);
 			}
 			else
-				choices.add(DIRECTION.DOWN);
+			    choices.add(DIRECTION.DOWN);
 		//	return choices;
 		}
 		else if(x1 > x2){
@@ -160,6 +198,7 @@ public class RoutingAlgo{
 		}
 		return choices;
 	}
+
 	/************************************************************************
      * Method Name  : WestFirstnextBank
      * Purpose      : implementing WestFirst routing algorithm

@@ -51,7 +51,7 @@ public class MainMemoryDRAMController extends MainMemoryController{
 	Rank ranks[];
 	int refreshCount[];
 
-        public MainMemoryDRAMController(boolean knl) { super(knl); }
+        public MainMemoryDRAMController(MainMemoryConfig mainMemoryConfig, boolean knl, int id) { super(knl, id); }
 	
 	public MainMemoryDRAMController(MainMemoryConfig mainMemoryConfig) {
 		super();

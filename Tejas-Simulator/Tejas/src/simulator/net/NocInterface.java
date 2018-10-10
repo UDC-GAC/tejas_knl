@@ -79,6 +79,11 @@ public class NocInterface implements CommunicationInterface{
             return ((NOC)ArchitecturalComponent.getInterConnect()).chooseMCDRAMorDDRmodule(addr);
         }
 
+        @Override
+        public MainMemoryDRAMController chooseMCDRAMmodule(long addr) {
+            return ((NOC)ArchitecturalComponent.getInterConnect()).chooseMCDRAMmodule(addr);
+        }
+
         // CUSTOM METHOD
 	// @Override
 	// public MainMemoryDRAMController getNearestMemoryController(long addr) {

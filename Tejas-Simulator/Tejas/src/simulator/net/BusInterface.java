@@ -48,4 +48,8 @@ public class BusInterface implements CommunicationInterface{
 		// TODO Auto-generated method stub
 		return ArchitecturalComponent.getMainMemoryDRAMController(this,chanNum);
 	}
+	public MainMemoryDRAMController chooseMCDRAMmodule(long addr) { return null; }
+
+	public MainMemoryDRAMController chooseMCDRAMorDDRmodule(long addr) { return null; }
+
 }

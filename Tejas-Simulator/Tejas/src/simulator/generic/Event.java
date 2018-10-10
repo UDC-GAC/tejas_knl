@@ -55,7 +55,7 @@ public abstract class Event implements Cloneable
 		this.requestingElement = requestingElement;
 		this.processingElement = processingElement;
 		this.requestType = requestType;
-		this.coreId = 0;	//FIXME!!
+		this.coreId = -1;	//FIXME!!
 		
 		this.priority = requestType.ordinal();
 	}

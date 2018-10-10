@@ -31,4 +31,5 @@ public interface CommunicationInterface {
 	public void sendMessage(Event event);
 	public MainMemoryDRAMController getNearestMemoryController(int chanNum);
         public MainMemoryDRAMController chooseMCDRAMorDDRmodule(long addr);
+        public MainMemoryDRAMController chooseMCDRAMmodule(long addr);
 }

@@ -391,10 +391,20 @@ public class XMLParser
 		    System.out.println("MCDRAM not configured!!");
 		}
 
+		try {
+		    SystemConfig.dynSched = getImmediateString("DynSched", systemElmnt).equals("true");
+		} catch(Exception e) {
+		    System.out.println("Static mapping");
+		}
+
+
 		if (SystemConfig.knl) {
 		    String clusterMode = getImmediateString("ClusterMode", systemElmnt);
 		    if (clusterMode.equals("SNC")) {
 			SystemConfig.clusterMode = SystemConfig.ClusterMode.SNC;	
+		    }
+		    if (clusterMode.equals("Quad")) {
+			SystemConfig.clusterMode = SystemConfig.ClusterMode.Quad;	
 		    }
 		    if (clusterMode.equals("Hemi")) {
 			SystemConfig.clusterMode = SystemConfig.ClusterMode.Hemi;	
@@ -608,7 +618,8 @@ public class XMLParser
 			core.MemoryPortNumbers = new int[core.MemoryNum];
 			for(int j = 0; j < core.MemoryNum; j++)
 			{
-				core.MemoryPortNumbers[j] = Integer.parseInt(memoryElmnt.getElementsByTagName("PortNumber").item(j).getFirstChild().getNodeValue());
+                            //System.out.println("j = " + j + ", core.MemoryNum = " + core.MemoryNum);
+                            core.MemoryPortNumbers[j] = Integer.parseInt(memoryElmnt.getElementsByTagName("PortNumber").item(j).getFirstChild().getNodeValue());
 			}
 			
 			core.intALUPower = getEnergyConfig(intALUElmnt);
