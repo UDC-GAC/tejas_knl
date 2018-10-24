@@ -1,22 +1,22 @@
 /*****************************************************************************
-				Tejas Simulator
-------------------------------------------------------------------------------------------------------------
-
-   Copyright 2010 Indian Institute of Technology, Delhi
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-------------------------------------------------------------------------------------------------------------
-
-	Contributors:  Moksh Upadhyay
+ * Tejas Simulator
+ * ------------------------------------------------------------------------------------------------------------
+ * 
+ * Copyright 2010 Indian Institute of Technology, Delhi
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ------------------------------------------------------------------------------------------------------------
+ * 
+ * Contributors: Moksh Upadhyay
  *****************************************************************************/
 package memorysystem;
 
@@ -71,9 +71,9 @@ public class Cache extends SimulationElement {
     public int                     numSetsBits;
     protected long                 timestamp;
     protected int                  numLinesMask;
-
+    
     public Coherence               mycoherence;
-
+    
     // public CacheType levelFromTop;
     public boolean                 isLastLevel; // Tells whether there are any
                                                 // more levels of
@@ -95,7 +95,7 @@ public class Cache extends SimulationElement {
                                               // in the cache
                                               // hierarchy
     protected CacheLine            lines[];
-
+    
     public long                    noOfRequests;
     public long                    noOfAccesses;
     public long                    noOfResponsesReceived;
@@ -107,33 +107,32 @@ public class Cache extends SimulationElement {
     public long                    evictions;
     public boolean                 debug           = false;
     public NucaType                nucaType;
-
+    
     public long                    invalidAccesses = 0;
-
+    
     CacheEnergyConfig              energy;
-
+    
     public String                  cacheName;
-
+    
     public void createLinkToNextLevelCache(Cache nextLevelCache) {
         this.nextLevel = nextLevelCache;
         this.nextLevel.prevLevel.add(this);
     }
-
+    
     public CacheConfig cacheConfig;
     public int         id;
-
+    
     // to check the source
-    public long        addrOrg = -1;
     protected MSHR     mshr;
-
+    
     public boolean isBusy(long addr) {
         return mshr.isMSHRFull(addr);
     }
-
+    
     public boolean isBusy() {
         return mshr.isMSHRFull();
     }
-
+    
     public Cache(String cacheName, int id, CacheConfig cacheParameters,
             CoreMemorySystem containingMemSys) {
         super(cacheParameters.portType, cacheParameters.getAccessPorts(),
@@ -149,14 +148,14 @@ public class Cache extends SimulationElement {
             }
             ArchitecturalComponent.caches.add(this);
         }
-
+        
         if (cacheParameters.collectWorkingSetData == true) {
             workingSet = new TreeSet<Long>();
             workingSetChunkSize = cacheParameters.workingSetChunkSize;
         }
-
+        
         this.containingMemSys = containingMemSys;
-
+        
         // set the parameters
         this.blockSize = cacheParameters.getBlockSize();
         this.assoc = cacheParameters.getAssoc();
@@ -166,9 +165,9 @@ public class Cache extends SimulationElement {
         this.numLines = getNumLines();
         this.numLinesBits = Util.logbase2(numLines);
         this.numSetsBits = numLinesBits - assocBits;
-
+        
         this.writePolicy = cacheParameters.getWritePolicy();
-
+        
         this.cacheConfig = cacheParameters;
         if (this.containingMemSys == null) {
             // Use the core memory system of core 0 for all the shared caches.
@@ -176,19 +175,19 @@ public class Cache extends SimulationElement {
             // this.containingMemSys =
             // ArchitecturalComponent.getCore(0).getExecEngine().getCoreMemorySystem();
         }
-
+        
         this.cacheName = cacheName;
         this.id = id;
-
+        
         if (cacheParameters.nextLevel == "") {
             this.isLastLevel = true;
         } else {
             this.isLastLevel = false;
         }
-
+        
         this.nextLevelName = cacheParameters.getNextLevel();
         // this.enforcesCoherence = cacheParameters.isEnforcesCoherence();
-
+        
         this.timestamp = 0;
         this.numLinesMask = numLines - 1;
         this.noOfRequests = 0;
@@ -202,24 +201,24 @@ public class Cache extends SimulationElement {
         this.evictions = 0;
         // make the cache
         makeCache(cacheParameters.isDirectory);
-
+        
         this.mshr = new MSHR(cacheConfig.mshrSize, blockSizeBits, this);
-
+        
         this.nucaType = cacheParameters.nucaType;
-
+        
         energy = cacheParameters.power;
-
+        
         eventsWaitingOnMSHR = new LinkedList<AddressCarryingEvent>();
     }
-
+    
     public void setCoherence(Coherence c) {
         this.mycoherence = c;
     }
-
+    
     public int numberOfLinesOfSetInMSHR(long addr) {
         int count = 0;
         int startIdx = getStartIdx(addr);
-
+        
         for (int idx = 0; idx < assoc; idx++) {
             int index = getNextIdx(startIdx, idx);
             CacheLine ll = lines[index];
@@ -229,72 +228,71 @@ public class Cache extends SimulationElement {
         }
         return count;
     }
-
+    
     private boolean printCacheDebugMessages = false;
-
+    
     public void handleEvent(EventQueue eventQ, Event e) {
-
+        
         AddressCarryingEvent event = (AddressCarryingEvent) e;
         printCacheDebugMessage(event);
-
+        
         long addr = ((AddressCarryingEvent) event).getAddress();
-        addrOrg = addr;
         RequestType requestType = event.getRequestType();
-
+        
         if (mshr.isAddrInMSHR(addr) && (requestType == RequestType.Cache_Read
                 || requestType == RequestType.Cache_Write
                 || requestType == RequestType.EvictCacheLine)) {
             mshr.addToMSHR(event);
             return;
         }
-
+        
         switch (event.getRequestType()) {
-        case Cache_Read:
-        case Cache_Write: {
-            handleAccess(addr, requestType, event);
-            break;
-        }
-
-        case Mem_Response: {
-            handleMemResponse(event);
-            break;
-        }
-
-        case EvictCacheLine: {
-            updateStateOfCacheLine(addr, MESIF.INVALID);
-            break;
-        }
-
-        case AckEvictCacheLine: {
-            processEventsInMSHR(addr);
-            break;
-        }
-
-        case DirectoryCachelineForwardRequest: {
-            handleDirectoryCachelineForwardRequest(addr,
-                    (Cache) (((AddressCarryingEvent) event)
-                            .getPayloadElement()),
-                    event);
-            break;
-        }
-
-        case DirectorySharedToExclusive: {
-            handleDirectorySharedToExclusive(addr);
-            break;
-        }
-
-        case AckDirectoryWriteHit: {
-            handleAckDirectoryWriteHit(event);
-            break;
-        }
+            case Cache_Read:
+            case Cache_Write: {
+                handleAccess(addr, requestType, event);
+                break;
+            }
+            
+            case Mem_Response: {
+                handleMemResponse(event);
+                break;
+            }
+            
+            case EvictCacheLine: {
+                updateStateOfCacheLine(addr, MESIF.INVALID);
+                break;
+            }
+            
+            case AckEvictCacheLine: {
+                processEventsInMSHR(addr);
+                break;
+            }
+            
+            case DirectoryCachelineForwardRequest: {
+                handleDirectoryCachelineForwardRequest(addr,
+                        (Cache) (((AddressCarryingEvent) event)
+                                .getPayloadElement()),
+                        event);
+                break;
+            }
+            
+            case DirectorySharedToExclusive: {
+                handleDirectorySharedToExclusive(addr);
+                break;
+            }
+            
+            case AckDirectoryWriteHit: {
+                handleAckDirectoryWriteHit(event);
+                break;
+            }
         }
     }
-
+    
     protected void handleAckDirectoryWriteHit(AddressCarryingEvent event) {
         // This function just ensures that the writeHit event gets a line
         long addr = event.getAddress();
         CacheLine cl = accessValid(addr);
-
+        
         if (cl == null) {
             misc.Error.showErrorAndExit("Ack write hit expects cache line");
             // writehit expects a line to be present
@@ -309,7 +307,7 @@ public class Cache extends SimulationElement {
             processEventsInMSHR(addr);
         }
     }
-
+    
     protected void handleDirectorySharedToExclusive(long addr) {
         if (accessValid(addr) == null) {
             // c1 and c2 both have address x
@@ -324,24 +322,24 @@ public class Cache extends SimulationElement {
         }
         updateStateOfCacheLine(addr, MESIF.EXCLUSIVE);
     }
-
+    
     protected void handleDirectoryCachelineForwardRequest(long addr,
             Cache cache, Event e) {
         AddressCarryingEvent event = new AddressCarryingEvent(
                 cache.getEventQueue(), 0, this, cache, RequestType.Mem_Response,
                 addr);
-
+        
         if (e != null) {
             event.setCoreId(e.coreId);
         } else {
             misc.Error.showErrorAndExit("Event should not be null...");
         }
-
+        
         updateStateOfCacheLine(addr, MESIF.FORWARD);
-
+        
         this.sendEvent(event);
     }
-
+    
     protected void printCacheDebugMessage(Event event) {
         if (printCacheDebugMessages == true) {
             if (event.getClass() == AddressCarryingEvent.class) {
@@ -356,16 +354,16 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     public void handleAccess(long addr, RequestType requestType,
             AddressCarryingEvent event) {
-
+        
         if (requestType == RequestType.Cache_Write) {
             noOfWritesReceived++;
         }
-
+        
         CacheLine cl = this.accessAndMark(addr);
-
+        
         // IF HIT
         if (cl != null) {
             cacheHit(addr, requestType, cl, event);
@@ -379,19 +377,19 @@ public class Cache extends SimulationElement {
             } else {
                 sendRequestToNextLevel(addr, RequestType.Cache_Read, event);
             }
-
+            
             mshr.addToMSHR(event);
         }
     }
-
+    
     protected void cacheHit(long addr, RequestType requestType, CacheLine cl,
             AddressCarryingEvent event) {
         hits++;
         noOfRequests++;
         noOfAccesses++;
-        if (this.isLastLevel)
-            System.out.println(
-                    "cacheHit " + this.toString() + " from " + event.coreId);
+        // if (this.isLastLevel)
+        // System.out.println(
+        // "cacheHit " + this.toString() + " from " + event.coreId);
         if (requestType == RequestType.Cache_Read) {
             sendAcknowledgement(event);
         } else if (requestType == RequestType.Cache_Write) {
@@ -410,10 +408,10 @@ public class Cache extends SimulationElement {
                     + "\ncache : " + this);
         }
     }
-
+    
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
-
+        
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
             this.fillAndSatisfyRequests(addr);
@@ -422,11 +420,11 @@ public class Cache extends SimulationElement {
             this.getEventQueue().addEvent(memResponseEvent);
         }
     }
-
+    
     public void sendRequestToNextLevel(long addr, RequestType requestType) {
         sendRequestToNextLevel(addr, requestType, null);
     }
-
+    
     public void sendRequestToNextLevel(long addr, RequestType requestType,
             Event e) {
         Cache c = this.nextLevel;
@@ -455,7 +453,7 @@ public class Cache extends SimulationElement {
             if (SystemConfig.mcdramAddr == -1) {
                 checkAddr();
             }
-
+            
             int modulo = (int) (addr % 512L);
             int q = this.id % 4;
             int iface = 0;
@@ -472,7 +470,7 @@ public class Cache extends SimulationElement {
             sendEvent(event);
         }
     }
-
+    
     // added by markos to check the address file
     private void checkAddr() {
         BufferedReader br = null;
@@ -482,12 +480,12 @@ public class Cache extends SimulationElement {
             br = new BufferedReader(new FileReader(orgFile));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
-
+            
             long mAddr = -1;
             long mSize = 0;
             long dAddr = -1;
             long dSize = 0;
-
+            
             while (line != null) {
                 StringTokenizer st = new StringTokenizer(line, "\t");
                 String module = st.nextToken();
@@ -519,19 +517,19 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     // added by kush
     public static int findChannelNumber(long physicalAddress) {
         long tempA, tempB;
         int channelBits = log2(SystemConfig.mainMemoryConfig.numChans);
-
+        
         int DataBusBytesOffest = log2(
                 SystemConfig.mainMemoryConfig.DATA_BUS_BYTES); // for 64 bit bus
                                                                // -> 8 bytes ->
                                                                // lower 3 bits
                                                                // of address
                                                                // irrelevant
-
+        
         int ColBytesOffset = log2(SystemConfig.mainMemoryConfig.BL);
         // these are the bits we need to throw away because of "bursts". The
         // column
@@ -546,7 +544,7 @@ public class Cache extends SimulationElement {
         // and BL =
         // 4.
         // This is equal to a cache line
-
+        
         // For clarity
         // Throw away bits to account for data bus size in bytes
         // and for burst length
@@ -557,14 +555,14 @@ public class Cache extends SimulationElement {
                                                                     // shift
         // System.out.println("Shifted address by " + (DataBusBytesOffest +
         // ColBytesOffset) + " bits");
-
+        
         // By the same logic, need to remove the burst-related column bits from
         // the
         // column bit width to be decoded
         // colEffectiveBits = colBits - ColBytesOffset;
-
+        
         // row:rank:bank:col:chan
-
+        
         tempA = physicalAddress;
         physicalAddress = physicalAddress >>> channelBits; // always unsigned
                                                            // shifting
@@ -573,44 +571,44 @@ public class Cache extends SimulationElement {
         int decodedChan = (int) (tempA ^ tempB);
         return decodedChan;
     }
-
+    
     public static int log2(int a) {
         return (int) (Math.log(a) / Math.log(2));
     }
-
+    
     private boolean isTopLevelCache() {
         return this.cacheConfig.firstLevel;
     }
-
+    
     public boolean isL2cache() {
         // I am not a first level cache.
         // But a cache connected on top of me is a first level cache
         return (this.cacheConfig.firstLevel == false
                 && this.prevLevel.get(0).cacheConfig.firstLevel == true);
     }
-
+    
     public boolean isIcache() {
         return (this.cacheConfig.firstLevel == true
                 && (this.cacheConfig.cacheDataType == CacheDataType.Instruction
                         || this.cacheConfig.cacheDataType == CacheDataType.Unified));
     }
-
+    
     public boolean isL1cache() {
         return (this.cacheConfig.firstLevel == true
                 && (this.cacheConfig.cacheDataType == CacheDataType.Data
                         || this.cacheConfig.cacheDataType == CacheDataType.Unified));
     }
-
+    
     private boolean isSharedCache = false;
-
+    
     public boolean isSharedCache() {
         return isSharedCache;
     }
-
+    
     public boolean isPrivateCache() {
         return !isSharedCache();
     }
-
+    
     public boolean addEventAtLowerCache(AddressCarryingEvent event, Cache c) {
         if (c.isBusy(event.getAddress()) == false) {
             sendEvent(event);
@@ -633,82 +631,82 @@ public class Cache extends SimulationElement {
             return false;
         }
     }
-
+    
     public void fillAndSatisfyRequests(long addr) {
         int numPendingEvents = mshr.getNumPendingEventsForAddr(addr);
         misses += numPendingEvents;
         noOfRequests += numPendingEvents;
         noOfAccesses += 1 + numPendingEvents;
-
+        
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
         handleEvictedLine(evictedLine);
         processEventsInMSHR(addr);
     }
-
+    
     protected void processEventsInMSHR(long addr) {
         LinkedList<AddressCarryingEvent> missList = mshr
                 .removeEventsFromMSHR(addr);
         AddressCarryingEvent writeEvent = null;
-
+        
         for (AddressCarryingEvent event : missList) {
             switch (event.getRequestType()) {
-            case Cache_Read: {
-                sendAcknowledgement(event);
-                break;
-            }
-
-            case Cache_Write: {
-                CacheLine cl = accessValid(addr);
-
-                if (cl != null) {
-                    updateStateOfCacheLine(addr, MESIF.MODIFIED);
-                    writeEvent = event;
-                } else {
-                    misc.Error.showErrorAndExit(
-                            "Cache write expects a line here : " + event);
+                case Cache_Read: {
+                    sendAcknowledgement(event);
+                    break;
                 }
-
-                break;
-            }
-
-            case DirectoryEvictedFromCoherentCache:
-            case EvictCacheLine: {
-                updateStateOfCacheLine(addr, MESIF.INVALID);
-                addUnprocessedEventsToEventQueue(missList);
-
-                processEventsInPendingList();
-                return;
-            }
+                
+                case Cache_Write: {
+                    CacheLine cl = accessValid(addr);
+                    
+                    if (cl != null) {
+                        updateStateOfCacheLine(addr, MESIF.MODIFIED);
+                        writeEvent = event;
+                    } else {
+                        misc.Error.showErrorAndExit(
+                                "Cache write expects a line here : " + event);
+                    }
+                    
+                    break;
+                }
+                
+                case DirectoryEvictedFromCoherentCache:
+                case EvictCacheLine: {
+                    updateStateOfCacheLine(addr, MESIF.INVALID);
+                    addUnprocessedEventsToEventQueue(missList);
+                    
+                    processEventsInPendingList();
+                    return;
+                }
             }
         }
-
+        
         if (writeEvent != null && writePolicy == WritePolicy.WRITE_THROUGH) {
             sendRequestToNextLevel(addr, RequestType.Cache_Write);
         }
-
+        
         processEventsInPendingList();
     }
-
+    
     private void processEventsInPendingList() {
         int size = eventsWaitingOnMSHR.size();
         for (int i = 0; i < size; i++) {
             if (eventsWaitingOnMSHR.isEmpty()) {
                 break;
             }
-
+            
             AddressCarryingEvent event = eventsWaitingOnMSHR.get(i);
             if (mshr.isMSHRFull(event.getAddress())) {
                 continue;
             }
-
+            
             event.getProcessingElement().handleEvent(event.getEventQ(), event);
-
+            
             eventsWaitingOnMSHR.remove(event);
             i--;
             size--;
         }
     }
-
+    
     protected void handleEvictedLine(CacheLine evictedLine) {
         if (evictedLine != null && evictedLine.getState() != MESIF.INVALID) {
             if (mshr.isAddrInMSHR(evictedLine.getAddress())) {
@@ -727,7 +725,7 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     private void handleCleanToModified(long addr, AddressCarryingEvent event) {
         if (mycoherence != null) {
             mycoherence.writeHit(addr, this);
@@ -738,7 +736,7 @@ public class Cache extends SimulationElement {
             sendRequestToNextLevel(addr, RequestType.Cache_Write, event);
         }
     }
-
+    
     private void addUnprocessedEventsToEventQueue(
             LinkedList<AddressCarryingEvent> missList) {
         int timeToSet = missList.size() * -1;
@@ -755,7 +753,7 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     public void sendAcknowledgement(AddressCarryingEvent event) {
         RequestType returnType = null;
         if (event.getRequestType() == RequestType.Cache_Read) {
@@ -765,44 +763,38 @@ public class Cache extends SimulationElement {
                     "sendAcknowledgement is meant for cache read operation only : "
                             + event);
         }
-
+        
         AddressCarryingEvent memResponseEvent = new AddressCarryingEvent(
                 event.getEventQ(), 0, event.getProcessingElement(),
                 event.getRequestingElement(), returnType, event.getAddress());
-
+        
         memResponseEvent.setCoreId(event.coreId);
-
+        
         sendEvent(memResponseEvent);
         noOfResponsesSent++;
-
-        // if(ArchitecturalComponent.getCores()[1].getNoOfInstructionsExecuted()
-        // > 6000000l)
-        // System.out.println("sending mem response from " +
-        // event.getProcessingElement() + " to " + event.getRequestingElement()
-        // + " for addr : " + event.getAddress());
     }
-
+    
     public long computeTag(long addr) {
         long tag = addr >>> (numSetsBits + blockSizeBits);
         return tag;
     }
-
+    
     public int getSetIdx(long addr) {
         int startIdx = getStartIdx(addr);
         return startIdx / assoc;
     }
-
+    
     public int getStartIdx(long addr) {
         long SetMask = (1 << (numSetsBits)) - 1;
         int startIdx = (int) ((addr >>> blockSizeBits) & (SetMask));
         return startIdx;
     }
-
+    
     public int getNextIdx(int startIdx, int idx) {
         int index = startIdx + (idx << numSetsBits);
         return index;
     }
-
+    
     public CacheLine accessValid(long addr) {
         CacheLine cl = access(addr);
         if (cl != null && cl.getState() != MESIF.INVALID) {
@@ -811,12 +803,12 @@ public class Cache extends SimulationElement {
             return null;
         }
     }
-
+    
     public CacheLine access(long addr) {
         /* compute startIdx and the tag */
         int startIdx = getStartIdx(addr);
         long tag = computeTag(addr);
-
+        
         /* search in a set */
         for (int idx = 0; idx < assoc; idx++) {
             // calculate the index
@@ -830,29 +822,29 @@ public class Cache extends SimulationElement {
         }
         return null;
     }
-
+    
     protected void mark(CacheLine ll, long tag) {
         ll.setTag(tag);
         mark(ll);
     }
-
+    
     private void mark(CacheLine ll) {
         ll.setTimestamp(timestamp);
         timestamp += 1.0;
     }
-
+    
     private void makeCache(boolean isDirectory) {
         lines = new CacheLine[numLines];
         for (int i = 0; i < numLines; i++) {
             lines[i] = new CacheLine(isDirectory);
         }
     }
-
+    
     private int getNumLines() {
         long totSize = size;
         return (int) (totSize / (long) (blockSize));
     }
-
+    
     protected CacheLine accessAndMark(long addr) {
         CacheLine cl = accessValid(addr);
         if (cl != null) {
@@ -860,7 +852,7 @@ public class Cache extends SimulationElement {
         }
         return cl;
     }
-
+    
     public CacheLine fill(long addr, MESIF stateToSet) {
         CacheLine evictedLine = null;
         /* compute startIdx and the tag */
@@ -870,7 +862,7 @@ public class Cache extends SimulationElement {
         /* find any invalid lines -- no eviction */
         CacheLine fillLine = null;
         boolean evicted = false;
-
+        
         // ------- Check if address is in cache ---------
         for (int idx = 0; idx < assoc; idx++) {
             int nextIdx = getNextIdx(startIdx, idx);
@@ -881,7 +873,7 @@ public class Cache extends SimulationElement {
                 break;
             }
         }
-
+        
         // ------- Check if there's an invalid line ---------
         for (int idx = 0; !addressAlreadyPresent && idx < assoc; idx++) {
             int nextIdx = getNextIdx(startIdx, idx);
@@ -894,7 +886,7 @@ public class Cache extends SimulationElement {
                 break;
             }
         }
-
+        
         // ------- Check if there's an unlocked valid line ---------
         if (fillLine == null) {
             evicted = true; // We need eviction in this case
@@ -902,22 +894,22 @@ public class Cache extends SimulationElement {
             for (int idx = 0; idx < assoc; idx++) {
                 int index = getNextIdx(startIdx, idx);
                 CacheLine ll = this.lines[index];
-
+                
                 if (mshr.isAddrInMSHR(ll.getAddress()) == true) {
                     continue;
                 }
-
+                
                 if (minTimeStamp > ll.getTimestamp()) {
                     minTimeStamp = ll.getTimestamp();
                     fillLine = ll;
                 }
             }
         }
-
+        
         if (fillLine == null) {
             misc.Error.showErrorAndExit("Unholy mess !!");
         }
-
+        
         /* if there has been an eviction */
         if (evicted) {
             evictedLine = (CacheLine) fillLine.clone();
@@ -927,20 +919,20 @@ public class Cache extends SimulationElement {
             evictedLine.setTag(evictedLinetag);
             this.evictions++;
         }
-
+        
         /* This is the new fill line */
         fillLine.setState(stateToSet);
         fillLine.setAddress(addr);
         mark(fillLine, tag);
         return evictedLine;
     }
-
+    
     public LinkedList<AddressCarryingEvent> eventsWaitingOnMSHR = new LinkedList<AddressCarryingEvent>();
-
+    
     public String toString() {
         return cacheName;
     }
-
+    
     public EnergyConfig calculateAndPrintEnergy(FileWriter outputFileWriter,
             String componentName) throws IOException {
         EnergyConfig newPower = new EnergyConfig(energy.leakageEnergy,
@@ -949,7 +941,7 @@ public class Cache extends SimulationElement {
         cachePower.printEnergyStats(outputFileWriter, componentName);
         return cachePower;
     }
-
+    
     public void updateStateOfCacheLine(long addr, MESIF newState) {
         CacheLine cl = this.access(addr);
         if (cl != null) {
@@ -959,7 +951,7 @@ public class Cache extends SimulationElement {
                         "Cannot invalidate a locked line. Addr : " + addr
                                 + ". Cache : " + this);
             }
-
+            
             if (newState == MESIF.INVALID) {
                 if (isBelowCoherenceLevel()) {
                     getPrevLevelCoherence().evictedFromSharedCache(addr, this);
@@ -984,7 +976,7 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     public EventQueue getEventQueue() {
         if (containingMemSys != null) {
             return containingMemSys.getCore().eventQueue;
@@ -992,15 +984,15 @@ public class Cache extends SimulationElement {
             return (ArchitecturalComponent.getCores()[0]).eventQueue;
         }
     }
-
+    
     public Cache getNextLevelCache(long addr) {
         return nextLevel;
     }
-
+    
     public void workingSetUpdate() {
         // Clear the working set data after every x instructions
         if (this.containingMemSys != null && this.workingSet != null) {
-
+            
             if (isIcache()) {
                 long numInsn = containingMemSys.getiCache().hits
                         + containingMemSys.getiCache().misses;
@@ -1020,7 +1012,7 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     TreeSet<Long> workingSet             = null;
     long          workingSetChunkSize    = 0;
     public long   numWorkingSetHits      = 0;
@@ -1029,7 +1021,7 @@ public class Cache extends SimulationElement {
     public long   totalWorkingSetSize    = 0;
     public long   maxWorkingSetSize      = Long.MIN_VALUE;
     public long   minWorkingSetSize      = Long.MAX_VALUE;
-
+    
     void addToWorkingSet(long addr) {
         long lineAddr = addr >>> blockSizeBits;
         if (workingSet != null) {
@@ -1042,7 +1034,7 @@ public class Cache extends SimulationElement {
             }
         }
     }
-
+    
     float getWorkingSetHitrate() {
         if (numWorkingSetHits == 0 && numWorkingSetMisses == 0) {
             return 0.0f;
@@ -1051,18 +1043,18 @@ public class Cache extends SimulationElement {
                     / (float) (numWorkingSetHits + numWorkingSetMisses);
         }
     }
-
+    
     void clearWorkingSet() {
         numFlushesInWorkingSet++;
         totalWorkingSetSize += workingSet.size();
         if (workingSet.size() > maxWorkingSetSize) {
             maxWorkingSetSize = workingSet.size();
         }
-
+        
         if (workingSet.size() < minWorkingSetSize) {
             minWorkingSetSize = workingSet.size();
         }
-
+        
         // System.out.println(this + " : For chunk " +
         // (numFlushesInWorkingSet-1) +
         // "\tworkSet = " + workingSet.size() +
@@ -1071,35 +1063,35 @@ public class Cache extends SimulationElement {
         // (float)totalWorkingSetSize/(float)numFlushesInWorkingSet +
         // "\tmaxSet = " + maxWorkingSetSize +
         // "\tworkSetHitrate = " + getWorkingSetHitrate());
-
+        
         if (workingSet != null) {
             workingSet.clear();
         }
     }
-
+    
     private long getLineAddress(long addr) {
         return addr >>> blockSizeBits;
     }
-
+    
     protected AddressCarryingEvent sendAnEventFromMeToCache(long addr, Cache c,
             RequestType request) {
         // Create an event
-
+        
         AddressCarryingEvent event = new AddressCarryingEvent(c.getEventQueue(),
                 0, this, c, request, addr);
-
+        
         SystemConfig.dataHops += getHopsCount(this, c);
-
+        
         // 2. Send event to cache
         this.sendEvent(event);
-
+        
         return event;
     }
-
+    
     private Coherence getPrevLevelCoherence() {
         return prevLevel.get(0).mycoherence;
     }
-
+    
     private boolean isBelowCoherenceLevel() {
         if (prevLevel != null && prevLevel.size() > 0
                 && prevLevel.get(0).mycoherence != null) {
@@ -1108,11 +1100,11 @@ public class Cache extends SimulationElement {
             return false;
         }
     }
-
+    
     protected boolean isThereAnUnlockedOrInvalidEntryInCacheSet(long addr) {
         /* compute startIdx and the tag */
         int startIdx = getStartIdx(addr);
-
+        
         /* search in a set */
         for (int idx = 0; idx < assoc; idx++) {
             // calculate the index
@@ -1120,18 +1112,18 @@ public class Cache extends SimulationElement {
             // fetch the cache line
             CacheLine ll = lines[index];
             // If the tag is matching, we have a hit
-
+            
             if (ll.getAddress() == addr) {
                 return true;
             }
-
+            
             if ((ll.isValid() == false
                     && mshr.isAddrInMSHR(ll.getAddress()) == false
                     || (this.nucaType != NucaType.NONE
                             && ll.isValid() == false))) {
                 return true;
             }
-
+            
             if (mshr.isAddrInMSHR(ll.getAddress()) == false) {
                 return true;
             }
@@ -1139,10 +1131,10 @@ public class Cache extends SimulationElement {
             // return true;
             // }
         }
-
+        
         return false;
     }
-
+    
     public int getHopsCount(Cache c1, Cache c2) {
         int c = 0;
         ID idC1 = ((NocInterface) c1.getComInterface()).getId();
@@ -1151,25 +1143,25 @@ public class Cache extends SimulationElement {
                 + Math.abs(idC2.getx() - idC1.getx());
         return c;
     }
-
+    
     public void printMSHR() {
         mshr.printMSHR();
     }
-
+    
     protected void noteInvalidState(String msg) {
         invalidAccesses++;
     }
-
+    
     public void noteMSHRStats() {
         mshr.noteMSHRStats();
     }
-
+    
     public double getAvgNumEventsPendingInMSHR() {
         return mshr.getAvgNumEventsPendingInMSHR();
     }
-
+    
     public double getAvgNumEventsPendingInMSHREntry() {
         return mshr.getAvgNumEventsPendingInMSHREntry();
     }
-
+    
 }

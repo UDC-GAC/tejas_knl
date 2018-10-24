@@ -65,15 +65,15 @@ public class CHA extends Cache implements Coherence {
         if ((SystemConfig.mcdramAddr != -1) && (SystemConfig.mcdramAddr <= addr)
                 && ((SystemConfig.mcdramSize * 100) > addrTrunc)) {
             tmpAddr = (addr - SystemConfig.mcdramAddr);
-            System.out.println("CHA address " + addr + " is within "
-                    + SystemConfig.mcdramAddr + " and "
-                    + SystemConfig.mcdramSize);
+//            System.out.println("CHA address " + addr + " is within "
+//                    + SystemConfig.mcdramAddr + " and "
+//                    + SystemConfig.mcdramSize);
         } else {
             Random rand = new Random();
             tmpAddr = rand.nextInt(38);
-            System.out.println("CHA address is more than " + addr + " than "
-                    + SystemConfig.mcdramAddr + " and "
-                    + SystemConfig.mcdramSize);
+//            System.out.println("CHA address is more than " + addr + " than "
+//                    + SystemConfig.mcdramAddr + " and "
+//                    + SystemConfig.mcdramSize);
         }
         CHA c = null;
         int cha = SystemConfig.mappingKNL[(int) tmpAddr];
@@ -84,7 +84,7 @@ public class CHA extends Cache implements Coherence {
             }
         }
         // CHA c = (CHA)SystemConfig.chaList.get(n);
-        System.out.println("CHA is " + cha + " addr " + addr);
+        //System.out.println("CHA is " + cha + " addr " + addr);
         return c;
     }
     
@@ -101,8 +101,8 @@ public class CHA extends Cache implements Coherence {
         SystemConfig.controlHops += getHopsCount(this, directory);
         // 2. Send event to directory
         c.sendEvent(event);
-        System.out.println("cache " + c.id + " sending to " + directory.id
-                + " a " + request + " with addr " + addr + " from " + this.id);
+//        System.out.println("cache " + c.id + " sending to " + directory.id
+//                + " a " + request + " with addr " + addr + " from " + this.id);
         return event;
     }
     
@@ -296,8 +296,8 @@ public class CHA extends Cache implements Coherence {
     
     private void handleWriteMiss(long addr, Cache c, Event e) {
         CacheLine dirEntry = access(addr);
-        System.out.println("directory " + this.id + " received from cache "
-                + c.id + " a write miss (core " + e.coreId + ")");
+//        System.out.println("directory " + this.id + " received from cache "
+//                + c.id + " a write miss (core " + e.coreId + ")");
         handleReadMiss(addr, c, e);
         for (Cache sharerCache : dirEntry.getSharers()) {
             if (sharerCache != c) {
@@ -356,9 +356,9 @@ public class CHA extends Cache implements Coherence {
     private void handleReadMiss(long addr, Cache c, Event e) {
         
         CacheLine dirEntry = access(addr);
-        System.out.println("directory " + this.id + " received from cache "
-                + c.id + " a read miss (core " + e.coreId + ") with address "
-                + addr);
+//        System.out.println("directory " + this.id + " received from cache "
+//                + c.id + " a read miss (core " + e.coreId + ") with address "
+//                + addr);
         
         switch (dirEntry.getState()) {
             case MODIFIED:
@@ -404,9 +404,9 @@ public class CHA extends Cache implements Coherence {
                 // Note that the directory is not coming into the picture. This
                 // is
                 // just a minor hack to maintain readability of the code
-                System.out.println("directory " + this.id
-                        + " requesting to next level to mcdram from core "
-                        + e.coreId);
+//                System.out.println("directory " + this.id
+//                        + " requesting to next level to mcdram from core "
+//                        + e.coreId);
                 this.sendRequestToMCDRAM(addr, RequestType.Cache_Read, c, e);
                 //c.sendRequestToNextLevel(addr, RequestType.Cache_Read, e);
 

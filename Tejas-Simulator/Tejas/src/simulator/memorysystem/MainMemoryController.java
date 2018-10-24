@@ -62,7 +62,7 @@ public class MainMemoryController extends SimulationElement
 		{
 			//Just to tell the requesting things that the write is completed
 		}
-		System.out.println("coreId = " + event.coreId + "\tmcdramId = " + this.id);
+		//System.out.println("coreId = " + event.coreId + "\tmcdramId = " + this.id);
 		if ((event.coreId>=0)) {
 		    accesses[event.coreId]++;
 		}

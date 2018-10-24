@@ -81,10 +81,10 @@
       
       <BranchPredictor>
 	<Predictor_Mode>GShare</Predictor_Mode>	
-	<PCBits>2</PCBits>
-	<BHRsize>16</BHRsize>
-	<BranchMispredPenalty>10</BranchMispredPenalty>	
-	<SaturatingBits>2</SaturatingBits>
+	<PCBits>4</PCBits>
+	<BHRsize>12</BHRsize>
+	<BranchMispredPenalty>11</BranchMispredPenalty>	
+	<SaturatingBits>4</SaturatingBits>
 	<LeakageEnergy>0.0178</LeakageEnergy>
 	<DynamicEnergy>0.0962</DynamicEnergy>
       </BranchPredictor>			
