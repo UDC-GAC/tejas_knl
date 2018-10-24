@@ -169,11 +169,11 @@ public class ArchitecturalComponent {
             for (int j = 0; j < numColumns; j++) {
                 String nextElementToken = (String) st.nextElement();
                 
-                if (t < 38)
-                    System.out.println("NOC [" + i + "][" + j + "] = "
-                            + nextElementToken + " t = " + t + " CHA (L2) = "
-                            + SystemConfig.mappingCHA[t] + "; core = "
-                            + SystemConfig.mappingCores[t]);
+//                if (t < 38)
+//                    System.out.println("NOC [" + i + "][" + j + "] = "
+//                            + nextElementToken + " t = " + t + " CHA (L2) = "
+//                            + SystemConfig.mappingCHA[t] + "; core = "
+//                            + SystemConfig.mappingCores[t]);
                 CommunicationInterface comInterface = ((NOC) interconnect)
                         .getNetworkElements()[i][j];
                 
