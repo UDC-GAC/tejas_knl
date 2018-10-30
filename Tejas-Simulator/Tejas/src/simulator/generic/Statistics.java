@@ -383,8 +383,8 @@ public class Statistics {
 					outputFileWriter.write("Nothing executed on core "+i+"\n");
 					continue;
 				}
-				int core_n = SystemConfig.mappingCores[i];
-				if ((SystemConfig.mappingCores[i] % 2)==1) {
+				int core_n = SystemConfig.mappingCores[i/2];
+				if ((i % 2)==1) {
 				    core_n++;
 				}
 				outputFileWriter.write("core\t\t=\t" + core_n + "\n");
