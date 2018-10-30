@@ -383,14 +383,18 @@ public class Statistics {
 					outputFileWriter.write("Nothing executed on core "+i+"\n");
 					continue;
 				}
-				outputFileWriter.write("core\t\t=\t" + i + "\n");
+				int core_n = SystemConfig.mappingCores[i];
+				if ((SystemConfig.mappingCores[i] % 2)==1) {
+				    core_n++;
+				}
+				outputFileWriter.write("core\t\t=\t" + core_n + "\n");
 				outputFileWriter.write("Memory Requests\t=\t" + coreMemSys[i].getNumberOfMemoryRequests() + "\n");
 				outputFileWriter.write("Loads\t\t=\t" + coreMemSys[i].getNumberOfLoads() + "\n");
 				outputFileWriter.write("Stores\t\t=\t" + coreMemSys[i].getNumberOfStores() + "\n");
 				outputFileWriter.write("LSQ forwardings\t=\t" + coreMemSys[i].getNumberOfValueForwardings() + "\n");
 				
-				printCacheStatistics("iTLB[" + i + "]", coreMemSys[i].getiTLB().getTlbHits(), coreMemSys[i].getiTLB().getTlbMisses());
-				printCacheStatistics("dTLB[" + i + "]", coreMemSys[i].getdTLB().getTlbHits(), coreMemSys[i].getdTLB().getTlbMisses());
+				printCacheStatistics("iTLB[" + core_n + "]", coreMemSys[i].getiTLB().getTlbHits(), coreMemSys[i].getiTLB().getTlbMisses());
+				printCacheStatistics("dTLB[" + core_n + "]", coreMemSys[i].getdTLB().getTlbHits(), coreMemSys[i].getdTLB().getTlbMisses());
 				
 				for(Cache c : coreMemSys[i].getCoreCacheList()) {
 					printCacheStats(c);
