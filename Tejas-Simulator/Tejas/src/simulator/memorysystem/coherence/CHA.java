@@ -432,9 +432,9 @@ public class CHA extends Cache implements Coherence {
         outputFileWriter.write("\n");
         outputFileWriter.write("CHA[" + id + "] Access due to ReadMiss\t=\t"
                 + readMissAccesses + "\n");
-        outputFileWriter.write("CHA[" + id + "] due to WriteMiss\t=\t"
+        outputFileWriter.write("CHA[" + id + "] Access due to WriteMiss\t=\t"
                 + writeMissAccesses + "\n");
-        outputFileWriter.write("CHA[" + id + "] due to WriteHit\t=\t"
+        outputFileWriter.write("CHA[" + id + "] Access due to WriteHit\t=\t"
                 + writeHitAccesses + "\n");
         outputFileWriter
                 .write("CHA[" + id + "] due to EvictionFromCoherentCache\t=\t"
@@ -444,7 +444,7 @@ public class CHA extends Cache implements Coherence {
                         + evictedFromSharedCacheAccesses + "\n");
         
         outputFileWriter.write("CHA[" + id + "] Hits\t=\t" + hits + "\n");
-        outputFileWriter.write("CHA[" + id + "]\t=\t" + misses + "\n");
+        outputFileWriter.write("CHA[" + id + "] Misses\t=\t" + misses + "\n");
         if ((hits + misses) != 0) {
             outputFileWriter.write("CHA[" + id + "] Hit-Rate\t=\t"
                     + Statistics.formatDouble((double) (hits) / (hits + misses))
