@@ -63,8 +63,8 @@ public class CHA extends Cache implements Coherence {
         long tmpAddr = 0;
         long addrTrunc = addr - SystemConfig.mcdramAddr;
         if ((SystemConfig.mcdramAddr != -1) && (SystemConfig.mcdramAddr <= addr)
-                && ((SystemConfig.mcdramSize * 100) > addrTrunc)) {
-            tmpAddr = (addr - SystemConfig.mcdramAddr);
+                && ((SystemConfig.mcdramSize * 100) > addrTrunc) && (addrTrunc >= 0)) {
+            tmpAddr = (addr - SystemConfig.mcdramAddr)/64;
 //            System.out.println("CHA address " + addr + " is within "
 //                    + SystemConfig.mcdramAddr + " and "
 //                    + SystemConfig.mcdramSize);
@@ -74,6 +74,7 @@ public class CHA extends Cache implements Coherence {
 //            System.out.println("CHA address is more than " + addr + " than "
 //                    + SystemConfig.mcdramAddr + " and "
 //                    + SystemConfig.mcdramSize);
+//              tmpAddr = addr % (256*1024*1024);
         }
         CHA c = null;
         int cha = SystemConfig.mappingKNL[(int) tmpAddr];

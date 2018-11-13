@@ -232,7 +232,6 @@ public class Cache extends SimulationElement {
     private boolean printCacheDebugMessages = false;
     
     public void handleEvent(EventQueue eventQ, Event e) {
-        
         AddressCarryingEvent event = (AddressCarryingEvent) e;
         printCacheDebugMessage(event);
         
@@ -357,7 +356,7 @@ public class Cache extends SimulationElement {
     
     public void handleAccess(long addr, RequestType requestType,
             AddressCarryingEvent event) {
-        
+        this.noOfAccesses++;
         if (requestType == RequestType.Cache_Write) {
             noOfWritesReceived++;
         }
@@ -366,8 +365,10 @@ public class Cache extends SimulationElement {
         
         // IF HIT
         if (cl != null) {
+            this.hits++;
             cacheHit(addr, requestType, cl, event);
         } else {
+            this.misses++;
             if (this.mycoherence != null) {
                 if (requestType == RequestType.Cache_Write) {
                     mycoherence.writeMiss(addr, event, this);
@@ -384,9 +385,9 @@ public class Cache extends SimulationElement {
     
     protected void cacheHit(long addr, RequestType requestType, CacheLine cl,
             AddressCarryingEvent event) {
-        hits++;
+        //hits++;
         noOfRequests++;
-        noOfAccesses++;
+        //noOfAccesses++;
         // if (this.isLastLevel)
         // System.out.println(
         // "cacheHit " + this.toString() + " from " + event.coreId);
@@ -634,9 +635,12 @@ public class Cache extends SimulationElement {
     
     public void fillAndSatisfyRequests(long addr) {
         int numPendingEvents = mshr.getNumPendingEventsForAddr(addr);
-        misses += numPendingEvents;
+        // WHY ARE NUMPENDING EVENTS ADDED?
+        //misses += numPendingEvents;
+        //noOfRequests += numPendingEvents;
+        //noOfAccesses += 1 + numPendingEvents;
         noOfRequests += numPendingEvents;
-        noOfAccesses += 1 + numPendingEvents;
+        //noOfAccesses++;
         
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
         handleEvictedLine(evictedLine);
