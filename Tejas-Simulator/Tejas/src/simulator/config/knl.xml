@@ -42,7 +42,7 @@
   <System>
     <MainMemory>
       <MemControllerToUse>SIMPLE</MemControllerToUse>       
-      <MainMemoryLatency>110</MainMemoryLatency>		
+      <MainMemoryLatency>125</MainMemoryLatency>		
       <MainMemoryFrequency>2133</MainMemoryFrequency> <!-- 2133 MT/s -->	
       <MainMemoryPortType>FCFS</MainMemoryPortType>		
       <MainMemoryAccessPorts>1</MainMemoryAccessPorts>	
@@ -59,7 +59,7 @@
 
     <MCDRAMConfig>
       <MCDRAMControllerToUse>SIMPLE</MCDRAMControllerToUse>       
-      <MCDRAMLatency>140</MCDRAMLatency>		
+      <MCDRAMLatency>150</MCDRAMLatency>		
       <MCDRAMFrequency>6400</MCDRAMFrequency> <!-- 6400 MT/s -->	
       <MCDRAMPortType>FCFS</MCDRAMPortType>		
       <MCDRAMAccessPorts>1</MCDRAMAccessPorts>	
@@ -91,7 +91,7 @@
       
       <LSQ> <!-- Load/Store Queue; normally separated -->
 	<LSQSize>48</LSQSize>				
-	<LSQLatency>5</LSQLatency>			
+	<LSQLatency>4</LSQLatency>			
 	<LSQPortType>UL</LSQPortType>			
 	<LSQAccessPorts>-1</LSQAccessPorts>		
 	<LSQPortOccupancy>-1</LSQPortOccupancy>		
@@ -113,7 +113,7 @@
 	<!-- uTLB 48 entries, 1 latency; DTLB 256 entries, 4 latency --> 
       <DTLB>
 	<Size>256</Size>		
-	<Latency>2</Latency>			
+	<Latency>4</Latency>			
 	<MissPenalty>10</MissPenalty>			
 	<PortType>UL</PortType>			
 	<AccessPorts>-1</AccessPorts>		
@@ -205,8 +205,8 @@
       
       <IntDiv>
 	<Num>1</Num>
-	<Latency>5</Latency>
-	<ReciprocalOfThroughput>12</ReciprocalOfThroughput>
+	<Latency>10</Latency>
+	<ReciprocalOfThroughput>20</ReciprocalOfThroughput>
 	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
 	<DynamicEnergy>0.6514</DynamicEnergy>			
@@ -214,7 +214,7 @@
       
       <FloatALU>
 	<Num>1</Num>
-	<Latency>5</Latency>
+	<Latency>2</Latency>
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
 	<PortNumber>1</PortNumber>
 	<LeakageEnergy>0.0654</LeakageEnergy>
@@ -223,8 +223,8 @@
       
       <FloatMul>
 	<Num>1</Num>
-	<Latency>6</Latency>
-	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
+	<Latency>10</Latency>
+	<ReciprocalOfThroughput>5</ReciprocalOfThroughput>
 	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
 	<DynamicEnergy>0.6514</DynamicEnergy>			
@@ -232,8 +232,8 @@
       
       <FloatDiv>
 	<Num>1</Num>
-	<Latency>6</Latency>
-	<ReciprocalOfThroughput>12</ReciprocalOfThroughput>
+	<Latency>25</Latency>
+	<ReciprocalOfThroughput>25</ReciprocalOfThroughput>
 	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
 	<DynamicEnergy>0.6514</DynamicEnergy>			
@@ -349,7 +349,7 @@
       <BlockSize>64</BlockSize>			
       <Associativity>8</Associativity>
       <Size>32768</Size>					
-      <Latency>3</Latency>				
+      <Latency>4</Latency>				
       <PortType>FCFS</PortType>				
       <AccessPorts>4</AccessPorts>			
       <PortOccupancy>1</PortOccupancy>		
@@ -393,9 +393,9 @@
       <BlockSize>64</BlockSize>			
       <Associativity>16</Associativity>
       <Size>1048576</Size>					
-      <Latency>18</Latency>				
+      <Latency>17</Latency>				
       <PortType>FCFS</PortType>				
-      <AccessPorts>1</AccessPorts>			
+      <AccessPorts>4</AccessPorts>			
       <PortOccupancy>1</PortOccupancy>		
       <Coherence>CHA_Dir</Coherence>			
       <NumBuses>1</NumBuses>			

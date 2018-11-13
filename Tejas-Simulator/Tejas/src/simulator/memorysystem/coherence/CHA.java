@@ -63,8 +63,8 @@ public class CHA extends Cache implements Coherence {
         long tmpAddr = 0;
         long addrTrunc = addr - SystemConfig.mcdramAddr;
         if ((SystemConfig.mcdramAddr != -1) && (SystemConfig.mcdramAddr <= addr)
-                && ((SystemConfig.mcdramSize * 100) > addrTrunc)) {
-            tmpAddr = (addr - SystemConfig.mcdramAddr);
+                && ((SystemConfig.mcdramSize * 100) > addrTrunc) && (addrTrunc >= 0)) {
+            tmpAddr = (addr - SystemConfig.mcdramAddr)/64;
 //            System.out.println("CHA address " + addr + " is within "
 //                    + SystemConfig.mcdramAddr + " and "
 //                    + SystemConfig.mcdramSize);
@@ -74,6 +74,7 @@ public class CHA extends Cache implements Coherence {
 //            System.out.println("CHA address is more than " + addr + " than "
 //                    + SystemConfig.mcdramAddr + " and "
 //                    + SystemConfig.mcdramSize);
+//              tmpAddr = addr % (256*1024*1024);
         }
         CHA c = null;
         int cha = SystemConfig.mappingKNL[(int) tmpAddr];
@@ -432,9 +433,9 @@ public class CHA extends Cache implements Coherence {
         outputFileWriter.write("\n");
         outputFileWriter.write("CHA[" + id + "] Access due to ReadMiss\t=\t"
                 + readMissAccesses + "\n");
-        outputFileWriter.write("CHA[" + id + "] due to WriteMiss\t=\t"
+        outputFileWriter.write("CHA[" + id + "] Access due to WriteMiss\t=\t"
                 + writeMissAccesses + "\n");
-        outputFileWriter.write("CHA[" + id + "] due to WriteHit\t=\t"
+        outputFileWriter.write("CHA[" + id + "] Access due to WriteHit\t=\t"
                 + writeHitAccesses + "\n");
         outputFileWriter
                 .write("CHA[" + id + "] due to EvictionFromCoherentCache\t=\t"
@@ -444,7 +445,7 @@ public class CHA extends Cache implements Coherence {
                         + evictedFromSharedCacheAccesses + "\n");
         
         outputFileWriter.write("CHA[" + id + "] Hits\t=\t" + hits + "\n");
-        outputFileWriter.write("CHA[" + id + "]\t=\t" + misses + "\n");
+        outputFileWriter.write("CHA[" + id + "] Misses\t=\t" + misses + "\n");
         if ((hits + misses) != 0) {
             outputFileWriter.write("CHA[" + id + "] Hit-Rate\t=\t"
                     + Statistics.formatDouble((double) (hits) / (hits + misses))

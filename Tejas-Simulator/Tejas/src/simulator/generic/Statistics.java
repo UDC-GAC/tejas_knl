@@ -287,7 +287,6 @@ public class Statistics {
 			outputFileWriter.write("Accesses to each MCDRAM module by each core:\n==================\n");
 			for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
 				outputFileWriter.write("MCDRAMController[" + mcdramControllerId++ + "]:\n");
-				int[] accesses = mcdramController.accesses;
 				for (int k=0; k<mcdramController.accesses.length; k++) {
 				    outputFileWriter.write("\tCORE[" + k + "] = " + mcdramController.accesses[k]  + "\n");
 				}
@@ -302,7 +301,6 @@ public class Statistics {
 			    outputFileWriter.write("CORE[" + c + "]:\n");
 			    int k = 0;
 			    for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
-				int[] accesses = mcdramController.accesses;
 				outputFileWriter.write("\tMCDRAM[" + k++ + "] = " + mcdramController.accesses[c]  + "\n");
 			    }			
 			    outputFileWriter.write("====================\n");
