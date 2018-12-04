@@ -380,6 +380,8 @@ public class Cache extends SimulationElement {
             }
             
             mshr.addToMSHR(event);
+            // will this fix counting issue??
+            this.noOfAccesses--;
         }
     }
     
