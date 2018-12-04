@@ -5,3 +5,11 @@
 .*
 *.swo
 #*
+*.pyc
+*.s
+*.jar
+*.project
+*.classpath
+*.obj
+*.csv
+*.ipynb
