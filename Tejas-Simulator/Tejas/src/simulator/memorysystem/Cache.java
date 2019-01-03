@@ -363,17 +363,20 @@ public class Cache extends SimulationElement {
         
         // IF HIT
         if (cl != null) {
-            this.hits++;
             cacheHit(addr, requestType, cl, event);
         } else {
-            this.misses++;
+            //this.misses++; /* this counts writes + misses */
             if (this.mycoherence != null) {
                 if (requestType == RequestType.Cache_Write) {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
+                    this.misses++;
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
+                if ((requestType == RequestType.Cache_Read)) {
+                    this.misses++;
+                }
                 sendRequestToNextLevel(addr, RequestType.Cache_Read, event);
             }
             
@@ -385,13 +388,10 @@ public class Cache extends SimulationElement {
     
     protected void cacheHit(long addr, RequestType requestType, CacheLine cl,
             AddressCarryingEvent event) {
-        //hits++;
+        
         noOfRequests++;
-        //noOfAccesses++;
-        // if (this.isLastLevel)
-        // System.out.println(
-        // "cacheHit " + this.toString() + " from " + event.coreId);
         if (requestType == RequestType.Cache_Read) {
+            this.hits++;
             sendAcknowledgement(event);
         } else if (requestType == RequestType.Cache_Write) {
             if (this.writePolicy == WritePolicy.WRITE_THROUGH) {
@@ -449,7 +449,6 @@ public class Cache extends SimulationElement {
             if (e != null) {
                 core = ArchitecturalComponent.getCore(e.coreId);
             }
-            // added later by kush
             MainMemoryDRAMController memController;
             if (SystemConfig.mcdramAddr == -1) {
                 checkAddr();

@@ -375,13 +375,15 @@ public class Statistics {
 			outputFileWriter.write("[Per core statistics]\n");
 			outputFileWriter.write("\n");
 			
+			int aux = 0;
 			for(int i = 0; i < SystemConfig.NoOfCores; i++)
 			{
 				if(cores[i].getCoreCyclesTaken()==0){
 					outputFileWriter.write("Nothing executed on core "+i+"\n");
 					continue;
 				}
-				int core_n = SystemConfig.mappingCores[i/2];
+				int core_n = -1;
+				while ((core_n = SystemConfig.mappingCores[aux++/2])==-1);
 				if ((i % 2)==1) {
 				    core_n++;
 				}

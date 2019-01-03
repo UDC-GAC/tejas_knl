@@ -218,7 +218,9 @@ public class ObjParser
 			//Determine the instruction class for this instruction
 			InstructionClass instructionClass;
 			instructionClass = InstructionClassTable.getInstructionClass(operation);
-
+			if (instructionClass == InstructionClass.INVALID) {
+			    //System.out.println("[DEBUG] INSTRUCTIO " + operation + " is not valid!!!");
+			}
 			// Obtain a handler for this instruction
 			X86StaticInstructionHandler handler;
 			handler = InstructionClassTable.getInstructionClassHandler(instructionClass);

@@ -31,6 +31,7 @@ import java.util.Vector;
 import main.ArchitecturalComponent;
 import memorysystem.AddressCarryingEvent;
 import net.NOC.TOPOLOGY;
+import net.RoutingAlgo.DIRECTION;
 import net.RoutingAlgo.SELSCHEME;
 import config.EnergyConfig;
 import config.NocConfig;
@@ -218,6 +219,8 @@ public class Router extends Switch{
 		else
 		    {
 			nextID = this.RouteComputation(currentId, destinationId);
+			int latency = latencyBetweenNOCElements;
+			if ((nextID==DIRECTION.RIGHT)||(nextID==DIRECTION.LEFT)) latency++;
 			reqOrReply = reqOrReply(currentId, destinationId);              // To avoid deadlock
 			//If buffer is available forward the event
 			if(this.CheckNeighbourBuffer(nextID,reqOrReply))   
@@ -228,7 +231,7 @@ public class Router extends Switch{
 				this.GetNeighbours().elementAt(nextID.ordinal()).getPort().put(
 											       event.update(
 													    eventQ,
-													    latencyBetweenNOCElements,        	//this.getLatency()
+													    latency,        	//this.getLatency()
 													    this, 
 													    this.GetNeighbours().elementAt(nextID.ordinal()),
 													    requestType));
