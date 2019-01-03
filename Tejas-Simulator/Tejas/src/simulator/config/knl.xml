@@ -4,12 +4,12 @@
     <EmulatorType>pin</EmulatorType> 
     <CommunicationType>sharedMemory</CommunicationType>  
     <StoreExecutionTraceInAFile>false</StoreExecutionTraceInAFile>
-    <BasenameForTraceFiles>/home/marcos.horro/tejas_installation_kit/outputs/trace_exec</BasenameForTraceFiles>
-    <PinTool>/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/PIN/pin-2.14-67254-gcc.4.4.7-linux</PinTool>
-    <PinInstrumentor>/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/src/emulator/pin/obj-pin/causalityTool.so</PinInstrumentor>
-    <QemuTool>/home/marcos.horro/tejas_installation_kit/outputs/qemu/x86_64-linux-user/qemu-x86_64 /home/marcos.horro/tmp/testQemu.o</QemuTool>
-    <ShmLibDirectory>/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/src/emulator/pin/obj-comm</ShmLibDirectory>
-    <KillEmulatorScript>/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/src/simulator/main/killAllDescendents.sh</KillEmulatorScript>
+    <BasenameForTraceFiles>/home/mhorro/tejas-git/outputs/trace_exec</BasenameForTraceFiles>
+    <PinTool>/home/mhorro/tejas-git/Tejas-Simulator/PIN/pin-3.7</PinTool>
+    <PinInstrumentor>/home/mhorro/tejas-git/Tejas-Simulator/Tejas/src/emulator/pin/obj-pin/causalityTool.so</PinInstrumentor>
+    <QemuTool>/home/mhorro/tejas-git/outputs/qemu/x86_64-linux-user/qemu-x86_64 /home/marcos.horro/tmp/testQemu.o</QemuTool>
+    <ShmLibDirectory>/home/mhorro/tejas-git/Tejas-Simulator/Tejas/src/emulator/pin/obj-comm</ShmLibDirectory>
+    <KillEmulatorScript>/home/mhorro/tejas-git/Tejas-Simulator/Tejas/src/simulator/main/killAllDescendents.sh</KillEmulatorScript>
   </Emulator>
     
   <Simulation>
@@ -41,8 +41,8 @@
 
   <System>
     <MainMemory>
-      <MemControllerToUse>SIMPLE</MemControllerToUse>       
-      <MainMemoryLatency>125</MainMemoryLatency>		
+      <MemControllerToUse>SIMPLE</MemControllerToUse><!--125ns, 98 cycles-->
+      <MainMemoryLatency>98</MainMemoryLatency>		
       <MainMemoryFrequency>2133</MainMemoryFrequency> <!-- 2133 MT/s -->	
       <MainMemoryPortType>FCFS</MainMemoryPortType>		
       <MainMemoryAccessPorts>1</MainMemoryAccessPorts>	
@@ -51,22 +51,22 @@
       <DynamicEnergy>0.0544</DynamicEnergy>
     </MainMemory>
 
-    <DynSched>false</DynSched>
-
-    <KNL>true</KNL>
-    <!-- Quad,SNC,Hemi,A2A -->
-    <ClusterMode>Quad</ClusterMode>
-
     <MCDRAMConfig>
-      <MCDRAMControllerToUse>SIMPLE</MCDRAMControllerToUse>       
-      <MCDRAMLatency>150</MCDRAMLatency>		
+      <MCDRAMControllerToUse>SIMPLE</MCDRAMControllerToUse><!--150ns, 117 cycles-->
+      <MCDRAMLatency>117</MCDRAMLatency>		
       <MCDRAMFrequency>6400</MCDRAMFrequency> <!-- 6400 MT/s -->	
       <MCDRAMPortType>FCFS</MCDRAMPortType>		
       <MCDRAMAccessPorts>1</MCDRAMAccessPorts>	
       <MCDRAMPortOccupancy>1</MCDRAMPortOccupancy>	
       <LeakageEnergy>0.0073</LeakageEnergy>
       <DynamicEnergy>0.0544</DynamicEnergy>
-    </MCDRAMConfig>
+    </MCDRAMConfig><DynSched>false</DynSched>
+
+    <KNL>true</KNL>
+    <!-- Quad,SNC,Hemi,A2A -->
+    <ClusterMode>Quad</ClusterMode>
+
+    
     
     <CacheBusLatency>1</CacheBusLatency>			
     
@@ -91,7 +91,7 @@
       
       <LSQ> <!-- Load/Store Queue; normally separated -->
 	<LSQSize>48</LSQSize>				
-	<LSQLatency>4</LSQLatency>			
+	<LSQLatency>1</LSQLatency>			
 	<LSQPortType>UL</LSQPortType>			
 	<LSQAccessPorts>-1</LSQAccessPorts>		
 	<LSQPortOccupancy>-1</LSQPortOccupancy>		
@@ -112,7 +112,7 @@
      
 	<!-- uTLB 48 entries, 1 latency; DTLB 256 entries, 4 latency --> 
       <DTLB>
-	<Size>256</Size>		
+	<Size>304</Size>		
 	<Latency>4</Latency>			
 	<MissPenalty>10</MissPenalty>			
 	<PortType>UL</PortType>			
@@ -159,7 +159,7 @@
       </InstructionWindow>
       
       <ROB>
-	<RetireWidth>1</RetireWidth>			
+	<RetireWidth>2</RetireWidth>			
 	<ROBSize>72</ROBSize>				
 	<LeakageEnergy>0.0058</LeakageEnergy>
 	<DynamicEnergy>0.0304</DynamicEnergy>
@@ -185,55 +185,57 @@
       <ExecutionCoreNumPorts>6</ExecutionCoreNumPorts>
       
       <IntALU>
-	<Num>1</Num>				
-	<Latency>3</Latency>		
+	<Num>2</Num>				
+	<Latency>1</Latency>		
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>	
 	<PortNumber>1</PortNumber>
-	<PortNumber>5</PortNumber>
-	<LeakageEnergy>0.0542</LeakageEnergy>
-	<DynamicEnergy>0.3257</DynamicEnergy>			
+	<PortNumber>5</PortNumber><LeakageEnergy>0.0542</LeakageEnergy>
+	<DynamicEnergy>0.3257</DynamicEnergy>
+	
       </IntALU>
       
       <IntMul>
 	<Num>1</Num>
-	<Latency>5</Latency>
+	<Latency>3</Latency>
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
-	<PortNumber>1</PortNumber>
+	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
-	<DynamicEnergy>0.6514</DynamicEnergy>			
+	<DynamicEnergy>0.6514</DynamicEnergy>
       </IntMul>
       
       <IntDiv>
 	<Num>1</Num>
-	<Latency>10</Latency>
-	<ReciprocalOfThroughput>20</ReciprocalOfThroughput>
+	<Latency>21</Latency>
+	<ReciprocalOfThroughput>12</ReciprocalOfThroughput>
 	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
 	<DynamicEnergy>0.6514</DynamicEnergy>			
       </IntDiv>
       
       <FloatALU>
-	<Num>1</Num>
-	<Latency>2</Latency>
+	<Num>2</Num>
+	<Latency>3</Latency>
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
-	<PortNumber>1</PortNumber>
+	<PortNumber>1</PortNumber><PortNumber>5</PortNumber>
 	<LeakageEnergy>0.0654</LeakageEnergy>
-	<DynamicEnergy>0.5366</DynamicEnergy>			
+	<DynamicEnergy>0.5366</DynamicEnergy>
+	
       </FloatALU>
       
       <FloatMul>
-	<Num>1</Num>
-	<Latency>10</Latency>
-	<ReciprocalOfThroughput>5</ReciprocalOfThroughput>
-	<PortNumber>0</PortNumber>
+	<Num>2</Num>
+	<Latency>6</Latency>
+	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
+	<PortNumber>0</PortNumber><PortNumber>1</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
-	<DynamicEnergy>0.6514</DynamicEnergy>			
+	<DynamicEnergy>0.6514</DynamicEnergy>
+	
       </FloatMul>
       
       <FloatDiv>
 	<Num>1</Num>
-	<Latency>25</Latency>
-	<ReciprocalOfThroughput>25</ReciprocalOfThroughput>
+	<Latency>24</Latency>
+	<ReciprocalOfThroughput>12</ReciprocalOfThroughput>
 	<PortNumber>0</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
 	<DynamicEnergy>0.6514</DynamicEnergy>			
@@ -241,7 +243,7 @@
       
       <Jump>
 	<Num>1</Num>
-	<Latency>2</Latency>
+	<Latency>1</Latency>
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
 	<PortNumber>5</PortNumber>
 	<LeakageEnergy>0.0271</LeakageEnergy>
@@ -250,7 +252,7 @@
       
       <Memory>
 	<Num>2</Num>
-	<Latency>6</Latency>
+	<Latency>1</Latency>
 	<ReciprocalOfThroughput>1</ReciprocalOfThroughput>
 	<PortNumber>2</PortNumber>
 	<PortNumber>3</PortNumber>
@@ -272,24 +274,24 @@
     </Core>
     
     <SharedCaches>
-      <Cache name="L2" numComponents="2" type="L2Cache_1M_16" />
+      <Cache name="L2" type="L2Cache_1M_16" />
       <Cache name="CHA" type="CHA_Dir" />
     </SharedCaches>
     
     <Interconnect>NOC</Interconnect>
     
     <NOC>
-      <NocConfigFile>/home/marcos.horro/tejas_installation_kit/Tejas-Simulator/Tejas/src/simulator/config/KNL.txt</NocConfigFile>
+      <NocConfigFile>/home/mhorro/tejas-git/Tejas-Simulator/Tejas/src/simulator/config/KNL.txt</NocConfigFile>
       <NocSelScheme>STATIC</NocSelScheme>
       <NocNumberOfBuffers>4</NocNumberOfBuffers>
       <NocPortType>FCFS</NocPortType>
       <NocAccessPorts>4</NocAccessPorts>
-      <NocPortOccupancy>1</NocPortOccupancy>
+      <NocPortOccupancy>4</NocPortOccupancy>
       <NocLatency>1</NocLatency>
-      <NocOperatingFreq>1300</NocOperatingFreq>
+      <NocOperatingFreq>1700</NocOperatingFreq>
       <NocTopology>MESH</NocTopology>     
       <NocRoutingAlgorithm>SIMPLE</NocRoutingAlgorithm>
-      <NocLatencyBetweenNOCElements>4</NocLatencyBetweenNOCElements>
+      <NocLatencyBetweenNOCElements>1</NocLatencyBetweenNOCElements>
       <NocRouterArbiter>RR_ARBITER</NocRouterArbiter>
       <TechPoint>90</TechPoint>
       <NocConnection>ELECTRICAL</NocConnection>
@@ -355,7 +357,7 @@
       <PortOccupancy>1</PortOccupancy>		
       <Coherence>None</Coherence>			
       <NumBuses>1</NumBuses>			
-      <MSHRSize>64</MSHRSize>
+      <MSHRSize>12</MSHRSize>
       <BusOccupancy>0</BusOccupancy>
       <Nuca>NONE</Nuca>						
       <ONuca>NONE</ONuca>						
@@ -376,8 +378,8 @@
       <AccessPorts>4</AccessPorts>			
       <PortOccupancy>1</PortOccupancy>		
       <Coherence>None</Coherence>			
-      <NumBuses>1</NumBuses>			
-      <MSHRSize>64</MSHRSize>
+      <NumBuses>2</NumBuses>			
+      <MSHRSize>12</MSHRSize>
       <BusOccupancy>0</BusOccupancy>
       <Nuca>NONE</Nuca>						
       <ONuca>NONE</ONuca>						
@@ -393,13 +395,13 @@
       <BlockSize>64</BlockSize>			
       <Associativity>16</Associativity>
       <Size>1048576</Size>					
-      <Latency>17</Latency>				
+      <Latency>13</Latency>				
       <PortType>FCFS</PortType>				
       <AccessPorts>4</AccessPorts>			
-      <PortOccupancy>1</PortOccupancy>		
+      <PortOccupancy>4</PortOccupancy>		
       <Coherence>CHA_Dir</Coherence>			
-      <NumBuses>1</NumBuses>			
-      <MSHRSize>64</MSHRSize>
+      <NumBuses>4</NumBuses>			
+      <MSHRSize>128</MSHRSize>
       <BusOccupancy>0</BusOccupancy>
       <Nuca>NONE</Nuca>						
       <ONuca>NONE</ONuca>						
@@ -416,7 +418,7 @@
       <BlockSize>64</BlockSize>			
       <Associativity>1</Associativity>
       <NumEntries>65536</NumEntries>
-      <Latency>2</Latency>				
+      <Latency>1</Latency>				
       <PortType>FCFS</PortType>				
       <AccessPorts>2</AccessPorts>			
       <PortOccupancy>1</PortOccupancy>		
