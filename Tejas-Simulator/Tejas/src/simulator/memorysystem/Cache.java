@@ -445,7 +445,7 @@ public class Cache extends SimulationElement {
             }
             addEventAtLowerCache(event, c);
         } else {
-            Core core = main.ArchitecturalComponent.getCores()[0];
+            Core core = main.ArchitecturalComponent.getCores()[0]; // to ensure that always has a core to send...
             if (e != null) {
                 core = ArchitecturalComponent.getCore(e.coreId);
             }

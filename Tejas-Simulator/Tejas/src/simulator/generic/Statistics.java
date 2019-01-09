@@ -169,14 +169,20 @@ public class Statistics {
 			outputFileWriter.write("Total Cycles taken\t\t=\t" + maxCoreCycles + "\n\n");
 			outputFileWriter.write("Total IPC\t\t=\t" + formatDouble((double)totalNumMicroOps/maxCoreCycles) + "\t\tin terms of micro-ops\n");
 			outputFileWriter.write("Total IPC\t\t=\t" + formatDouble((double)totalHandledCISCInsn/maxCoreCycles) + "\t\tin terms of CISC instructions\n\n");
-			
+	                
+			int aux = 0;
 			for(int i = 0; i < SystemConfig.NoOfCores; i++)
 			{
 				if(cores[i].getNoOfInstructionsExecuted()==0){
 					outputFileWriter.write("Nothing executed on core "+i+"\n");
 					continue;
 				}
-				outputFileWriter.write("core\t\t=\t" + i + "\n");
+	                        int core_n = -1;
+	                        while ((core_n = SystemConfig.mappingCores[aux++/2])==-1);
+	                        if ((i % 2)==1) {
+	                            core_n++;
+	                        }
+				outputFileWriter.write("core\t\t=\t" + core_n + "\n");
 				
 				CoreConfig coreConfig = SystemConfig.core[i];
 				
@@ -232,6 +238,7 @@ public class Statistics {
 
 			EnergyConfig coreEnergy = new EnergyConfig(0, 0);
 			i = 0;
+			// to fix
 			for(Core core : cores) {
 				coreEnergy.add(core.calculateAndPrintEnergy(outputFileWriter, "core[" + (i++) + "]"));
 			}
