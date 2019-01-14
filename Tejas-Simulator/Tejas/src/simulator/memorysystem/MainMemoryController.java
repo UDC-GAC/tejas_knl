@@ -28,7 +28,7 @@ public class MainMemoryController extends SimulationElement
                       SystemConfig.mainMemoryLatency,
                       SystemConfig.mainMemoryFrequency
                       );
-		for (int i=0;i<SystemConfig.nTiles;i++) {
+		for (int i=0;i<SystemConfig.NoOfCores;i++) {
 		    accesses[i] = 0;
 		}
 
@@ -43,7 +43,7 @@ public class MainMemoryController extends SimulationElement
 				);
 		this.mcdram = knl;
 		this.id = id;
-		for (int i=0;i<SystemConfig.nTiles;i++) {
+		for (int i=0;i<SystemConfig.NoOfCores;i++) {
 		    accesses[i] = 0;
 		}
 	}

@@ -157,7 +157,7 @@ public class CacheLine implements Cloneable {
             misc.Error.showErrorAndExit(
                     "Trying to remove a sharer which is not a sharer !!");
         }
-        this.sharers.remove(c);
+        if (sharers!=null) this.sharers.remove(c);
     }
     
     public Object clone() {
@@ -219,10 +219,10 @@ public class CacheLine implements Cloneable {
     
     public LinkedList<Cache> getSharers() {
         checkIsDirectory();
-        LinkedList<Cache> temp = sharers;
+        LinkedList<Cache> tmp = sharers;
         if (this.fw != null)
-            temp.add(this.fw);
-        return temp;
+            tmp.add(this.fw);
+        return tmp;
     }
     
     public Cache getFirstSharer() {

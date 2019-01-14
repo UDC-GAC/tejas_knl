@@ -37,25 +37,31 @@ public class CHA extends Cache implements Coherence {
     long evictedFromCoherentCacheAccesses = 0;
     long evictedFromSharedCacheAccesses   = 0;
     
+    Cache cacheOwner = null;
+    
     public CHA(String cacheName, int id, CacheConfig cacheParameters,
             CoreMemorySystem containingMemSys) {
         super(cacheName, id, cacheParameters, containingMemSys);
         MemorySystem.coherenceNameMappings.put(cacheName, this);
     }
     
+    public CHA(String cacheName, int id, CacheConfig cacheParameters,
+            CoreMemorySystem containingMemSys, Cache cacheOwner) {
+        super(cacheName, id, cacheParameters, containingMemSys);
+        MemorySystem.coherenceNameMappings.put(cacheName, this);
+        this.cacheOwner = cacheOwner;
+    }
+    
     public void writeHit(long addr, Event e, Cache c) {
-        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryWriteHit,
-                e);
+        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryWriteHit, e);
     }
     
     public void readMiss(long addr, Event e, Cache c) {
-        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryReadMiss,
-                e);
+        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryReadMiss, e);
     }
     
     public void writeMiss(long addr, Event e, Cache c) {
-        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryWriteMiss,
-                e);
+        sendAnEventFromCacheToDirectory(addr, c, RequestType.DirectoryWriteMiss, e);
     }
     
     // made for Quadrant cluster mode
@@ -102,8 +108,8 @@ public class CHA extends Cache implements Coherence {
         SystemConfig.controlHops += getHopsCount(this, directory);
         // 2. Send event to directory
         c.sendEvent(event);
-//        System.out.println("cache " + c.id + " sending to " + directory.id
-//                + " a " + request + " with addr " + addr + " from " + this.id);
+        //System.out.println("cache " + c.id + " sending from " + this.id + " to " + directory.id
+        //        + " a " + request + " with addr " + addr);
         return event;
     }
     
@@ -118,8 +124,9 @@ public class CHA extends Cache implements Coherence {
     }
     
     public void handleWriteHit(long addr, Cache c, AddressCarryingEvent event) {
-        CacheLine dirEntry = access(addr);
-        
+        CacheLine localEntry = access(addr);  
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);  
+
         switch (dirEntry.getState()) {
             case MODIFIED:
             case EXCLUSIVE:
@@ -127,7 +134,7 @@ public class CHA extends Cache implements Coherence {
             case SHARED: {
                 
                 if (dirEntry.isSharer(c) == false) {
-                    // Valid case : c1 and c2 are sharers address x
+                    // Valid case : c1 and c2 are sharers address xse
                     // Both encountered a write at the same time
                     noteInvalidState(
                             "WriteHit expects cache to be a sharer. Cache : "
@@ -144,7 +151,6 @@ public class CHA extends Cache implements Coherence {
                 dirEntry.clearAllSharers();
                 dirEntry.addSharer(c);
                 dirEntry.setState(MESIF.MODIFIED);
-                
                 break;
             }
             case INVALID: {
@@ -157,7 +163,8 @@ public class CHA extends Cache implements Coherence {
                 break;
             }
         }
-        
+        if (localEntry==null) fill(addr, MESIF.MODIFIED);
+        localEntry.setState(MESIF.MODIFIED);
         sendAnEventFromMeToCache(addr, c, RequestType.AckDirectoryWriteHit);
     }
     
@@ -175,25 +182,11 @@ public class CHA extends Cache implements Coherence {
     }
     
     public AddressCarryingEvent evictedFromSharedCache(long addr, Cache c) {
-        // XXX
-        // if(ArchitecturalComponent.getCore(0).getNoOfInstructionsExecuted()>3000000l)
-        // {
-        // System.out.println("Directory EvictShared t : " +
-        // GlobalClock.getCurrentTime() + " addr : " + addr + " cache : " + c);
-        // }
-        // evictedFromSharedCacheAccesses++;
         return sendAnEventFromCacheToDirectory(addr, c,
                 RequestType.DirectoryEvictedFromSharedCache, null);
     }
     
     public AddressCarryingEvent evictedFromCoherentCache(long addr, Cache c) {
-        // XXX
-        // if(ArchitecturalComponent.getCore(0).getNoOfInstructionsExecuted()>3000000l)
-        // {
-        // System.out.println("Directory EvictCoherent t : " +
-        // GlobalClock.getCurrentTime() + " addr : " + addr + " cache : " + c);
-        // }
-        // evictedFromCoherentCacheAccesses++;
         return sendAnEventFromCacheToDirectory(addr, c,
                 RequestType.DirectoryEvictedFromCoherentCache, null);
     }
@@ -223,21 +216,30 @@ public class CHA extends Cache implements Coherence {
         if (reqType == RequestType.DirectoryEvictedFromCoherentCache) {
             evictedFromCoherentCacheAccesses++;
         }
-        
-        if (access(addr) == null && (reqType == RequestType.DirectoryWriteHit
+
+        if (access(addr, SystemConfig.globalDir)==null) {
+            //System.out.println("As expected, cache line is null for addr " + addr);
+        } else {
+            //System.out.println("Cache line is NOT null for addr " + addr + " eventtype " + event.getRequestType().name());
+        }
+        if (access(addr, SystemConfig.globalDir) == null && (reqType == RequestType.DirectoryWriteHit
                 || reqType == RequestType.DirectoryWriteMiss
                 || reqType == RequestType.DirectoryReadMiss
                 || reqType == RequestType.DirectoryEvictedFromCoherentCache)) {
             
             // This events expect a directory entry to be present.
             // Create a directory entry.
-            CacheLine evictedEntry = fill(addr, MESIF.INVALID);
             
+            CacheLine tmp = fill(addr, MESIF.INVALID, SystemConfig.globalDir);
+            CacheLine evictedEntry = fill(addr, MESIF.INVALID);
+
+            //System.out.println("filling line for addr " + addr);
             if (evictedEntry != null && evictedEntry.isValid()) {
-                // System.out.println("Evicted line : " +
-                // (evictedEntry.getAddress()>>blockSizeBits) + "\n" +
-                // evictedEntry);
-                invalidateDirectoryEntry(evictedEntry);
+                System.out.println("Evicted line : " +
+                 (evictedEntry.getAddress()>>blockSizeBits) + "\n" +
+                 evictedEntry);
+                invalidateDirectoryEntry(tmp);
+                evictedEntry.setState(MESIF.INVALID);
             }
         }
         
@@ -250,6 +252,7 @@ public class CHA extends Cache implements Coherence {
             }
             
             case DirectoryReadMiss: {
+                //System.out.println("coherence " + this.id + " received from " + senderCache.id);
                 handleReadMiss(addr, senderCache, event);
                 break;
             }
@@ -272,7 +275,24 @@ public class CHA extends Cache implements Coherence {
     }
     
     private void handleEvictedFromCoherentCache(long addr, Cache c) {
-        CacheLine dirEntry = access(addr);
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        CacheLine localEntry = access(addr);
+        
+        if ((localEntry == null)&&(dirEntry == null)) {
+            misc.Error.showErrorAndExit("local entry null and dirEntry ");
+        }
+        
+        if ((localEntry == null)) {
+            //System.out.println("local entry ");
+            localEntry = fill(addr, MESIF.INVALID);
+            localEntry = access(addr);
+        }
+        
+        if ((dirEntry == null)) {
+            //System.out.println("dirEntry");
+            dirEntry = fill(addr, MESIF.INVALID);
+            dirEntry = access(addr);
+        }
         
         if (dirEntry.isSharer(c)) {
             dirEntry.removeSharer(c);
@@ -280,6 +300,8 @@ public class CHA extends Cache implements Coherence {
                 dirEntry.setState(MESIF.INVALID);
             } else if (dirEntry.getSharers().size() == 1) {
                 dirEntry.setState(MESIF.EXCLUSIVE);
+                //System.out.println("handleEvictedFromCoherentCache " + addr);                
+               
                 sendAnEventFromMeToCache(addr, dirEntry.getOwner(),
                         RequestType.DirectorySharedToExclusive);
             }
@@ -292,13 +314,22 @@ public class CHA extends Cache implements Coherence {
                     + ". Addr : " + addr);
         }
         
+        if (localEntry.isSharer(c)) {
+            localEntry.removeSharer(c);
+            if (localEntry.getSharers().size() == 0) {
+                localEntry.setState(MESIF.INVALID);
+            } else if (localEntry.getSharers().size() == 1) {
+                localEntry.setState(MESIF.INVALID);
+            }
+        }
+        
         sendAnEventFromMeToCache(addr, c, RequestType.AckEvictCacheLine);
     }
     
     private void handleWriteMiss(long addr, Cache c, Event e) {
-        CacheLine dirEntry = access(addr);
-//        System.out.println("directory " + this.id + " received from cache "
-//                + c.id + " a write miss (core " + e.coreId + ")");
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        //System.out.println("directory " + this.id + " received from cache "
+        //        + c.id + " a write miss (core " + e.coreId + ")");
         handleReadMiss(addr, c, e);
         for (Cache sharerCache : dirEntry.getSharers()) {
             if (sharerCache != c) {
@@ -310,6 +341,18 @@ public class CHA extends Cache implements Coherence {
         dirEntry.clearAllSharers();
         dirEntry.addSharer(c);
         dirEntry.setState(MESIF.MODIFIED);
+        
+        CacheLine localEntry = access(addr);
+        if (localEntry == null) {
+            localEntry = fill(addr, MESIF.MODIFIED);
+            if (localEntry == null) {
+                localEntry = access(addr);
+            }
+        }
+        localEntry.clearAllSharers();
+        localEntry.addSharer(c);
+        localEntry.setState(MESIF.MODIFIED);
+        
     }
     
     private void handleEvictFromSharedCache(long addr) {
@@ -356,11 +399,13 @@ public class CHA extends Cache implements Coherence {
     
     private void handleReadMiss(long addr, Cache c, Event e) {
         
-        CacheLine dirEntry = access(addr);
-//        System.out.println("directory " + this.id + " received from cache "
-//                + c.id + " a read miss (core " + e.coreId + ") with address "
-//                + addr);
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
         
+        if (dirEntry.getState() != MESIF.INVALID) {
+            System.out.println("NOT INVALID directory " + this.id + " received from cache "
+                + c.id + " a read miss (core " + e.coreId + ") with address "
+                + addr + "; state " + dirEntry.getState().name());
+        } 
         switch (dirEntry.getState()) {
             case MODIFIED:
             case EXCLUSIVE:
@@ -405,9 +450,9 @@ public class CHA extends Cache implements Coherence {
                 // Note that the directory is not coming into the picture. This
                 // is
                 // just a minor hack to maintain readability of the code
-//                System.out.println("directory " + this.id
-//                        + " requesting to next level to mcdram from core "
-//                        + e.coreId);
+                //System.out.println("directory " + this.id
+                 //       + " requesting to next level to mcdram from core "
+                   //     + e.coreId);
                 this.sendRequestToMCDRAM(addr, RequestType.Cache_Read, c, e);
                 //c.sendRequestToNextLevel(addr, RequestType.Cache_Read, e);
 

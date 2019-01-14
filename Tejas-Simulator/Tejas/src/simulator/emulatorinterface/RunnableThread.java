@@ -376,7 +376,7 @@ public class RunnableThread implements Encoding, Runnable {
                     break;
                 }
             }
-            System.out.println("[DEBUG] " + threadName + " id = " + id + " core = " + cores[c].getCore_number() + " (core affinity = " + SystemConfig.coreAffinity[i]);
+            System.out.println("[DEBUG] " + threadName + " id = " + id + " core = " + cores[c].getCore_number() + " (core affinity = " + SystemConfig.coreAffinity[i] + ")");
 
             //pipelineInterfaces[i] = cores[i].getPipelineInterface();
             pipelineInterfaces[i] = pipeTmp;
