@@ -292,14 +292,6 @@ public class Cache extends SimulationElement {
         
         if (cl == null) {
             misc.Error.showErrorAndExit("Ack write hit expects cache line");
-            // writehit expects a line to be present
-            if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
-                fillAndSatisfyRequests(addr);
-                return;
-            } else {
-                event.setEventTime(event.getEventTime() + 1);
-                return;
-            }
         } else {
             processEventsInMSHR(addr);
         }
@@ -333,7 +325,14 @@ public class Cache extends SimulationElement {
         }
         
         updateStateOfCacheLine(addr, MESIF.FORWARD);
-        
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        if (dirEntry != null) {
+            dirEntry.addSharer(cache);
+            dirEntry.setState(MESIF.FORWARD);
+        } else {
+            // this should never happen
+            fill(addr, MESIF.FORWARD, SystemConfig.globalDir);
+        }
         this.sendEvent(event);
     }
     
@@ -371,6 +370,7 @@ public class Cache extends SimulationElement {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
                     this.misses++;
+                    //System.out.println("L2 read miss " + this.id + " addr " + addr);
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
@@ -412,6 +412,7 @@ public class Cache extends SimulationElement {
     
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
+        //System.out.println("memResponse " + addr);   
         
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
@@ -642,6 +643,7 @@ public class Cache extends SimulationElement {
         //noOfAccesses++;
         
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
+        //System.out.println("fillAndSatisfyRequests " + addr);
         handleEvictedLine(evictedLine);
         processEventsInMSHR(addr);
     }
@@ -826,6 +828,25 @@ public class Cache extends SimulationElement {
         return null;
     }
     
+    public CacheLine access(long addr, Cache c) {
+        /* compute startIdx and the tag */
+        int startIdx = getStartIdx(addr);
+        long tag = computeTag(addr);
+        
+        /* search in a set */
+        for (int idx = 0; idx < assoc; idx++) {
+            // calculate the index
+            int index = getNextIdx(startIdx, idx);
+            // fetch the cache line
+            CacheLine ll = c.lines[index];
+            // If the tag is matching, we have a hit
+            if (ll.hasTagMatch(tag)) {
+                return ll;
+            }
+        }
+        return null;
+    }
+    
     protected void mark(CacheLine ll, long tag) {
         ll.setTag(tag);
         mark(ll);
@@ -930,6 +951,80 @@ public class Cache extends SimulationElement {
         return evictedLine;
     }
     
+    public CacheLine fill(long addr, MESIF stateToSet, Cache c) {
+        CacheLine evictedLine = null;
+        /* compute startIdx and the tag */
+        int startIdx = getStartIdx(addr);
+        long tag = computeTag(addr);
+        boolean addressAlreadyPresent = false;
+        /* find any invalid lines -- no eviction */
+        CacheLine fillLine = null;
+        boolean evicted = false;
+        
+        // ------- Check if address is in cache ---------
+        for (int idx = 0; idx < assoc; idx++) {
+            int nextIdx = getNextIdx(startIdx, idx);
+            CacheLine ll = c.lines[nextIdx];
+            if (ll.getTag() == tag) {
+                addressAlreadyPresent = true;
+                fillLine = ll;
+                break;
+            }
+        }
+        
+        // ------- Check if there's an invalid line ---------
+        for (int idx = 0; !addressAlreadyPresent && idx < assoc; idx++) {
+            int nextIdx = getNextIdx(startIdx, idx);
+            CacheLine ll = c.lines[nextIdx];
+            if (ll.isValid() == false
+                    && mshr.isAddrInMSHR(ll.getAddress()) == false
+                    || (c.nucaType != NucaType.NONE
+                            && ll.isValid() == false)) {
+                fillLine = ll;
+                break;
+            }
+        }
+        
+        // ------- Check if there's an unlocked valid line ---------
+        if (fillLine == null) {
+            evicted = true; // We need eviction in this case
+            double minTimeStamp = Double.MAX_VALUE;
+            for (int idx = 0; idx < assoc; idx++) {
+                int index = getNextIdx(startIdx, idx);
+                CacheLine ll = c.lines[index];
+                
+                if (mshr.isAddrInMSHR(ll.getAddress()) == true) {
+                    continue;
+                }
+                
+                if (minTimeStamp > ll.getTimestamp()) {
+                    minTimeStamp = ll.getTimestamp();
+                    fillLine = ll;
+                }
+            }
+        }
+        
+        if (fillLine == null) {
+            misc.Error.showErrorAndExit("Unholy mess !!");
+        }
+        
+        /* if there has been an eviction */
+        if (evicted) {
+            evictedLine = (CacheLine) fillLine.clone();
+            long evictedLinetag = evictedLine.getTag();
+            evictedLinetag = (evictedLinetag << numSetsBits)
+                    + (startIdx / assoc);
+            evictedLine.setTag(evictedLinetag);
+            c.evictions++;
+        }
+        
+        /* This is the new fill line */
+        fillLine.setState(stateToSet);
+        fillLine.setAddress(addr);
+        mark(fillLine, tag);
+        return evictedLine;
+    }
+    
     public LinkedList<AddressCarryingEvent> eventsWaitingOnMSHR = new LinkedList<AddressCarryingEvent>();
     
     public String toString() {
@@ -947,6 +1042,15 @@ public class Cache extends SimulationElement {
     
     public void updateStateOfCacheLine(long addr, MESIF newState) {
         CacheLine cl = this.access(addr);
+        // added by markos (supporting distributed directory) 
+        if (mycoherence != null) {
+            CacheLine dirEntry = access(addr,(Cache)mycoherence);
+            if (dirEntry!=null) {
+                dirEntry.setState(newState);
+            }
+        }
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        if (dirEntry!=null) dirEntry.setState(newState);
         if (cl != null) {
             cl.setState(newState);
             if (newState == MESIF.INVALID && mshr.isAddrInMSHR(addr)) {

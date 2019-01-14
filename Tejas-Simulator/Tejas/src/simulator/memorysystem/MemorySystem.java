@@ -84,6 +84,19 @@ public class MemorySystem
 	}
 	return null;
     }
+    
+    public static Coherence createCHA(String token, int t, CommunicationInterface comInterface, Cache c) {
+        for(CacheConfig config : SystemConfig.sharedCacheConfigs) {
+            if (config.isDirectory) {
+                Cache cha = null;
+                cha = new CHA(token + "[" + t + "]", t, config, null, c);
+                cha.setComInterface(comInterface);
+                return (Coherence)cha;
+            }
+        }
+        return null;
+    }
+        
 	
 	public static Cache createSharedCache(String token, CommunicationInterface comInterface) {
 		for(CacheConfig config : SystemConfig.sharedCacheConfigs) {
