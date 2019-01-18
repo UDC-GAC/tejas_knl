@@ -39,8 +39,9 @@ parallel = False
 if "poly"==sys.argv[1]:
     #sizes = ['MINI', 'SMALL', 'MEDIUM', 'LARGE', 'EXTRALARGE']
     sizes = ['MINI','SMALL','MEDIUM']
+    #benchmarks =['correlation','covariance','heat-3d','seidel-2d','fdtd-2d','jacobi-1d','jacobi-2d','adi']
     benchmarks = ['correlation','covariance','gemm','gemver','gesummv','symm','syr2k','syrk','trmm',\
-                  '2mm','3mm','atax','bicg','doitgen','mvt','cholesky','durbin','gramschmidt',\
+                  '2mm','3mm','atax','bicg','doitgen','mvt','cholesky','gramschmidt',\
                   'lu','ludcmp','trisolv','adi','jacobi-1d','jacobi-2d','heat-3d','fdtd-2d','seidel-2d']
     idx = MultiIndex.from_product([benchmarks,sizes])
 elif "parboil"==sys.argv[1]:
@@ -48,9 +49,9 @@ elif "parboil"==sys.argv[1]:
     #sizes = ['UT','small','default','short','medium','medium','small','small']
     #benchmarks = ['bfs','cutcp','histo','lbm','sgemm','spmv','stencil','tpacf']
     sizes = ['medium']
-    benchmarks = ['spmv']
+    benchmarks = ['spmv','sgemm']
     cores = range(64)
-    idx = MultiIndex.from_arrays([benchmarks*len(cores),sizes*len(cores),list(cores)*len(benchmarks)])
+    idx = MultiIndex.from_product([benchmarks,sizes,cores])
 else:
     print("Benchmark not known!")
     exit(0)
@@ -69,6 +70,8 @@ affinity = [0,1,20,21,22,23,52,53,\
             10,11,32,33,12,13,34,35,54,55,\
             16,17,40,41,58,59,18,19,42,43,60,61]
 
+#affinity = range(64)
+
 for b in benchmarks:
     for s in sizes:
         print("parsing " + b + " for size " + s + " (" + str(len(cores)) + " core/s) ...")
@@ -84,7 +87,7 @@ for b in benchmarks:
                 knl_df.loc[b,s] = [int(i) for i in l.strip().split(" ")]
             else:
                 # format -> PAPI thread X\tCOUNTER1 COUNTER2 ... COUNTERN
-                if len(l.strip().split("\t"))<=1: continue
+                if len(l.strip().split("\t"))<=1: continue                                                          
                 knl_df.loc[b,s,affinity[c]] = [int(i) for i in l.strip().split("\t")[1].split(" ")]
                 c += 1
         for core_monitor in cores:

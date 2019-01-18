@@ -235,9 +235,9 @@ public class CHA extends Cache implements Coherence {
 
             //System.out.println("filling line for addr " + addr);
             if (evictedEntry != null && evictedEntry.isValid()) {
-                System.out.println("Evicted line : " +
-                 (evictedEntry.getAddress()>>blockSizeBits) + "\n" +
-                 evictedEntry);
+                //System.out.println("Evicted line : " +
+                // (evictedEntry.getAddress()>>blockSizeBits) + "\n" +
+                // evictedEntry);
                 invalidateDirectoryEntry(tmp);
                 evictedEntry.setState(MESIF.INVALID);
             }
@@ -350,9 +350,8 @@ public class CHA extends Cache implements Coherence {
             }
         }
         localEntry.clearAllSharers();
-        localEntry.addSharer(c);
         localEntry.setState(MESIF.MODIFIED);
-        
+        localEntry.addSharer(c);        
     }
     
     private void handleEvictFromSharedCache(long addr) {
