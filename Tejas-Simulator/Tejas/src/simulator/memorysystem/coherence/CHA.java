@@ -238,7 +238,8 @@ public class CHA extends Cache implements Coherence {
                 //System.out.println("Evicted line : " +
                 // (evictedEntry.getAddress()>>blockSizeBits) + "\n" +
                 // evictedEntry);
-                invalidateDirectoryEntry(tmp);
+                if (tmp!=null)
+                    invalidateDirectoryEntry(tmp);
                 evictedEntry.setState(MESIF.INVALID);
             }
         }
@@ -399,12 +400,7 @@ public class CHA extends Cache implements Coherence {
     private void handleReadMiss(long addr, Cache c, Event e) {
         
         CacheLine dirEntry = access(addr, SystemConfig.globalDir);
-        
-        if (dirEntry.getState() != MESIF.INVALID) {
-            System.out.println("NOT INVALID directory " + this.id + " received from cache "
-                + c.id + " a read miss (core " + e.coreId + ") with address "
-                + addr + "; state " + dirEntry.getState().name());
-        } 
+
         switch (dirEntry.getState()) {
             case MODIFIED:
             case EXCLUSIVE:

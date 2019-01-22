@@ -8,6 +8,36 @@ import pandas as pd
 import tejas
 from pandas import DataFrame
 from pandas import MultiIndex
+
+affinity = [0,1,20,21,22,23,52,53,\
+            28,29,50,51,2,3,30,31,\
+            36,37,56,57,8,9,38,39,\
+            44,45,62,63,14,15,46,47,\
+            4,5,24,25,48,49,6,7,26,27,\
+            10,11,32,33,12,13,34,35,54,55,\
+            16,17,40,41,58,59,18,19,42,43,60,61]
+
+quadrant =[[0,1,20,21,28,29,50,51,36,37,56,57,44,45,62,63],
+           [22,23,52,53,2,3,30,31,8,9,38,39,14,15,46,47],
+           [4,5,24,25,48,49,10,11,32,33,16,17,40,41,58,59],
+           [6,7,26,27,12,13,34,35,54,55,18,19,42,43,60,61]]
+
+def mcdram_ifaces(type, core_monitor):
+    ifaces = list(range(8))
+    quad = 0
+    for q in quadrant:
+        if core_monitor in q:
+            break
+        quad += 1
+    if type=="near":
+        ifaces = [quad*2,quad*2+1]  
+    elif type=="far":
+        ifaces.remove(quad*2)
+        ifaces.remove(quad*2+1)
+    else:
+        print("nor near or far type, exiting...")
+        exit(0)
+    return ifaces
 # usage:
 
 #def readable_dir(prospective_dir):
@@ -49,7 +79,7 @@ elif "parboil"==sys.argv[1]:
     #sizes = ['UT','small','default','short','medium','medium','small','small']
     #benchmarks = ['bfs','cutcp','histo','lbm','sgemm','spmv','stencil','tpacf']
     sizes = ['medium']
-    benchmarks = ['spmv','sgemm']
+    benchmarks = ['sgemm']
     cores = range(64)
     idx = MultiIndex.from_product([benchmarks,sizes,cores])
 else:
@@ -61,14 +91,6 @@ tejas_df = pd.DataFrame(0,columns=papi_counters,index=idx)
 
 list_df = {}
 path = "./outputs/"
-
-affinity = [0,1,20,21,22,23,52,53,\
-            28,29,50,51,2,3,30,31,\
-            36,37,56,57,8,9,38,39,\
-            44,45,62,63,14,15,46,47,\
-            4,5,24,25,48,49,6,7,26,27,\
-            10,11,32,33,12,13,34,35,54,55,\
-            16,17,40,41,58,59,18,19,42,43,60,61]
 
 #affinity = range(64)
 
@@ -90,9 +112,17 @@ for b in benchmarks:
                 if len(l.strip().split("\t"))<=1: continue                                                          
                 knl_df.loc[b,s,affinity[c]] = [int(i) for i in l.strip().split("\t")[1].split(" ")]
                 c += 1
+        if parallel:
+            for c in cores:
+                knl_df.loc[b,s,c]['mcdram'] /=2
+                knl_df.loc[b,s,c]['mcdramfar'] /=2
+                knl_df.loc[b,s,c]['mcdramnear'] /=2
         for core_monitor in cores:
-            print("\tcore " + str(core_monitor+1) + "/" + str(len(cores)) +\
+            print("\tcore " + str(core_monitor) + "/" + str(len(cores)-1) +\
                    " (tile " + str(map_core_to_tile[core_monitor]) + ") ...")
+            print("\t\t core " + str(core_monitor) + " near ifaces " + str(mcdram_ifaces("near", core_monitor)))
+            print("\t\t core " + str(core_monitor) + " far  ifaces " + str(mcdram_ifaces("far", core_monitor)))
+
             list_df[b]= {'core':core,'tile':tile}
             
             if len(cores)>1:
@@ -115,14 +145,15 @@ for b in benchmarks:
                 tejas_df.loc[i].l2accesses /= 2
                 tejas_df.loc[i].l2misses /= 2
                 tejas_df.loc[i].instl2miss /= 2
-            for r in range(2,8):
-                tejas_df.loc[i].mcdramfar += core['memory'].main.mcdram[r][core_monitor]
-            for r in range(0,2):
+            for r in mcdram_ifaces("far",core_monitor):
+                tejas_df.loc[i].mcdramfar  += core['memory'].main.mcdram[r][core_monitor]
+            for r in mcdram_ifaces("near",core_monitor):
                 tejas_df.loc[i].mcdramnear += core['memory'].main.mcdram[r][core_monitor]
             tejas_df.loc[i].mcdram = tejas_df.loc[i].mcdramfar + tejas_df.loc[i].mcdramnear
             tejas_df.loc[i].l1tlbmisses = core['memory'].tlb.data.misses[core_monitor]
             tejas_df.loc[i].l2tlbmisses = core['memory'].tlb.data.hits[core_monitor] + core['memory'].tlb.data.misses[core_monitor]
         
+df=tejas_df/knl_df
 
 #print("Absolute error in terms of cycles:")
 #for b in benchmarks:
