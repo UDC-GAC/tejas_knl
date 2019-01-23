@@ -68,18 +68,20 @@ parallel = False
 
 if "poly"==sys.argv[1]:
     #sizes = ['MINI', 'SMALL', 'MEDIUM', 'LARGE', 'EXTRALARGE']
-    sizes = ['MINI','SMALL','MEDIUM']
+    #sizes = ['MINI','SMALL','MEDIUM']
     #benchmarks =['correlation','covariance','heat-3d','seidel-2d','fdtd-2d','jacobi-1d','jacobi-2d','adi']
     benchmarks = ['correlation','covariance','gemm','gemver','gesummv','symm','syr2k','syrk','trmm',\
                   '2mm','3mm','atax','bicg','doitgen','mvt','cholesky','gramschmidt',\
-                  'lu','ludcmp','trisolv','adi','jacobi-1d','jacobi-2d','heat-3d','fdtd-2d','seidel-2d']
+                  #'lu','ludcmp','trisolv','adi','jacobi-1d','jacobi-2d','heat-3d','fdtd-2d','seidel-2d']
+                  'trisolv','adi','jacobi-1d','jacobi-2d','heat-3d','fdtd-2d','seidel-2d']
+    sizes = ['MEDIUM']
     idx = MultiIndex.from_product([benchmarks,sizes])
 elif "parboil"==sys.argv[1]:
     parallel = True
     #sizes = ['UT','small','default','short','medium','medium','small','small']
     #benchmarks = ['bfs','cutcp','histo','lbm','sgemm','spmv','stencil','tpacf']
-    sizes = ['medium']
-    benchmarks = ['sgemm']
+    sizes = ['short']
+    benchmarks = ['lbm']
     cores = range(64)
     idx = MultiIndex.from_product([benchmarks,sizes,cores])
 else:
@@ -105,12 +107,14 @@ for b in benchmarks:
         for l in f:
             if len(l.strip().split(" "))<=1: continue
             # format splited only by spaces
-            if len(l.strip().split(" "))==len(papi_counters):
-                knl_df.loc[b,s] = [int(i) for i in l.strip().split(" ")]
+            if len(l.strip().split(" "))<=len(papi_counters):
+                tmp = l.strip().split(" ")
+                knl_df.loc[b,s] = [int(i) for i in tmp]
             else:
                 # format -> PAPI thread X\tCOUNTER1 COUNTER2 ... COUNTERN
-                if len(l.strip().split("\t"))<=1: continue                                                          
-                knl_df.loc[b,s,affinity[c]] = [int(i) for i in l.strip().split("\t")[1].split(" ")]
+                if len(l.strip().split("\t"))<=1: continue  
+                tmp = l.strip().split("\t")[1].split(" ")                                                         
+                knl_df.loc[b,s,affinity[c]] = [int(i) for i in tmp]
                 c += 1
         if parallel:
             for c in cores:
@@ -120,8 +124,8 @@ for b in benchmarks:
         for core_monitor in cores:
             print("\tcore " + str(core_monitor) + "/" + str(len(cores)-1) +\
                    " (tile " + str(map_core_to_tile[core_monitor]) + ") ...")
-            print("\t\t core " + str(core_monitor) + " near ifaces " + str(mcdram_ifaces("near", core_monitor)))
-            print("\t\t core " + str(core_monitor) + " far  ifaces " + str(mcdram_ifaces("far", core_monitor)))
+            #print("\t\t core " + str(core_monitor) + " near ifaces " + str(mcdram_ifaces("near", core_monitor)))
+            #print("\t\t core " + str(core_monitor) + " far  ifaces " + str(mcdram_ifaces("far", core_monitor)))
 
             list_df[b]= {'core':core,'tile':tile}
             
@@ -150,11 +154,17 @@ for b in benchmarks:
             for r in mcdram_ifaces("near",core_monitor):
                 tejas_df.loc[i].mcdramnear += core['memory'].main.mcdram[r][core_monitor]
             tejas_df.loc[i].mcdram = tejas_df.loc[i].mcdramfar + tejas_df.loc[i].mcdramnear
-            tejas_df.loc[i].l1tlbmisses = core['memory'].tlb.data.misses[core_monitor]
-            tejas_df.loc[i].l2tlbmisses = core['memory'].tlb.data.hits[core_monitor] + core['memory'].tlb.data.misses[core_monitor]
+            tejas_df.loc[i].l2tlbmisses = core['memory'].tlb.data.misses[core_monitor]
+            tejas_df.loc[i].l1tlbmisses = core['memory'].tlb.data.hits[core_monitor] + core['memory'].tlb.data.misses[core_monitor]
         
 df=tejas_df/knl_df
-
+df.drop('instl2miss',axis=1,inplace=True)
+df.drop('l1tlbmisses',axis=1,inplace=True)
+df.drop('l2tlbmisses',axis=1,inplace=True)
+df.drop('l2hits',axis=1,inplace=True)
+df.reset_index(level=1,drop=True,inplace=True)
+df.reset_index(inplace=True)
+sns.catplot(df)
 #print("Absolute error in terms of cycles:")
 #for b in benchmarks:
 #    print(b + "\t\t" + str(abs((knl_df.cycles[b]-list_df[b]['core']['timing'].cycles[0])/knl_df.cycles[b])))
