@@ -45,7 +45,6 @@ public class Router extends Switch{
 	protected int latencyBetweenNOCElements;
 	protected Vector<Router> neighbours;
 	EnergyConfig power;
-    //    public int numCollisions = 0;
 	public static int incoming=0;
 	public static int outgoing=0;	
 	
