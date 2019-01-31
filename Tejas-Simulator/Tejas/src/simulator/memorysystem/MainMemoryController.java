@@ -15,12 +15,18 @@ import main.ArchitecturalComponent;
 
 public class MainMemoryController extends SimulationElement
 {
-	long numAccesses;
+	long numAccesses = 0;
+	long numResponses = 0;
+	long numWrites = 0;
+
+        public int[] responses = new int[SystemConfig.NoOfCores];
+        public int[] accesses = new int[SystemConfig.NoOfCores];
+        public int[] writes = new int[SystemConfig.NoOfCores];
+
 	int id = 0;
         boolean mcdram = false;
         boolean count = false;
-        public int[] accesses = new int[SystemConfig.NoOfCores];
-
+        
 	public MainMemoryController() {
 		super(SystemConfig.mainMemPortType,
                       SystemConfig.mainMemoryAccessPorts,
@@ -52,28 +58,51 @@ public class MainMemoryController extends SimulationElement
 	{
 		if (event.getRequestType() == RequestType.Cache_Read)
 		{
+
+                        incrementNumResponses(event);
 			AddressCarryingEvent e = new AddressCarryingEvent(eventQ, 0,
 					this, event.getRequestingElement(),	RequestType.Mem_Response,
 					((AddressCarryingEvent)event).getAddress());
 			
 			getComInterface().sendMessage(e);
+
 		}
 		else if (event.getRequestType() == RequestType.Cache_Write)
 		{
 			//Just to tell the requesting things that the write is completed
-		}
-		//System.out.println("coreId = " + event.coreId + "\tmcdramId = " + this.id);
-		if ((event.coreId>=0)) {
-		    accesses[event.coreId]++;
+		        incrementNumWrites(event);
+
 		}
 
-		incrementNumAccesses();
+		incrementNumAccesses(event);
+                //System.out.println("coreId = " + event.coreId + "\tmcdramId = " + this.id);
+
 	}
 	
-	void incrementNumAccesses()
+	void incrementNumAccesses(Event event)
 	{
+	        if ((event.coreId>=0)) {
+	             accesses[event.coreId]++;
+	        }
 		numAccesses += 1;
 	}
+	
+	void incrementNumResponses(Event event)
+	{
+            if ((event.coreId>=0)) {
+                responses[event.coreId]++;
+            }
+	    numResponses += 1;
+	}
+	
+        void incrementNumWrites(Event event)
+        {
+            if ((event.coreId>=0)) {
+                writes[event.coreId]++;
+            }
+            numWrites += 1;
+        }
+        	
 	
 	public EnergyConfig calculateAndPrintEnergy(FileWriter outputFileWriter, String componentName) throws IOException
 	{

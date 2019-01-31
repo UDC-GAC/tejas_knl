@@ -8,11 +8,15 @@ import matplotlib.pyplot as plt
 import re
 import copy
 
+# USE: python3 mapping.knl <benchmark> <size>
+
+# horrible but functional script for creating heatmaps
+# better run within ipython
+
 b = sys.argv[1]
 s = sys.argv[2]
 
 path = "./outputs/"
-
 col_map = np.reshape(np.zeros(6*9),[9,6])
 acc_map = np.reshape(np.zeros(6*9),[9,6])
 
@@ -28,6 +32,7 @@ for l in f:
     if "router" in l: acc_map[x][y] = val
     if "collisions" in l: col_map[x][y] = val
 
-
+acc_map /= np.max(acc_map)
+col_map /= np.max(col_map)
 sns.heatmap(acc_map)
 plt.show()
