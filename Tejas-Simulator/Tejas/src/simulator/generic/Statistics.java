@@ -294,8 +294,8 @@ public class Statistics {
 			outputFileWriter.write("Accesses to each MCDRAM module by each core:\n==================\n");
 			for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
 				outputFileWriter.write("MCDRAMController[" + mcdramControllerId++ + "]:\n");
-				for (int k=0; k<mcdramController.accesses.length; k++) {
-				    outputFileWriter.write("\tCORE[" + k + "] = " + mcdramController.accesses[k]  + "\n");
+				for (int k=0; k<mcdramController.responses.length; k++) {
+				    outputFileWriter.write("\tCORE[" + k + "] = " + mcdramController.responses[k]  + "\n");
 				}
 				outputFileWriter.write("====================\n");
 			}			
@@ -308,7 +308,7 @@ public class Statistics {
 			    outputFileWriter.write("CORE[" + c + "]:\n");
 			    int k = 0;
 			    for(MainMemoryDRAMController mcdramController : ArchitecturalComponent.mcdramControllers) {
-				outputFileWriter.write("\tMCDRAM[" + k++ + "] = " + mcdramController.accesses[c]  + "\n");
+				outputFileWriter.write("\tMCDRAM[" + k++ + "] = " + mcdramController.responses[c]  + "\n");
 			    }			
 			    outputFileWriter.write("====================\n");
 			}
@@ -468,6 +468,18 @@ public class Statistics {
 				outputFileWriter.write("\n\nNumber of hops:\n==============================\n");
 				outputFileWriter.write("\t\tControl hops: " + SystemConfig.controlHops +"\n");
 				outputFileWriter.write("\t\tData hops: " + SystemConfig.dataHops +"\n\n");
+				
+				outputFileWriter.write("\n\ntype of packets:\n==============================\n");
+                                for (int i=0; i<numRows; i++) {
+                                    for (int j=0; j<numColumns; j++) {
+                                        NocInterface nocInterface = (NocInterface) ((NOC)ArchitecturalComponent.getInterConnect()).getNetworkElements()[i][j];
+                                        Router rout = nocInterface.getRouter();
+                                        outputFileWriter.write("packetsDataRouter[" + i + "][" + j + "] = " + rout.packetData);
+                                        outputFileWriter.write("packetsQueryRouter[" + i + "][" + j + "] = " + rout.packetQuery);
+                                        outputFileWriter.write("packetsForwardRouter[" + i + "][" + j + "] = " + rout.packetForward);
+                                    }
+                               }
+
 			}
 			if(SimulationConfig.nucaType!=NucaType.NONE)
 			{
