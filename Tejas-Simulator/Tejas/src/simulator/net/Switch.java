@@ -175,26 +175,6 @@ public class Switch extends SimulationElement {
       nextID = nextIdFatTree(elementNumber);
     this.hopCounters++;
 
-    // custom packet taxonomy
-    //		switch (requestType) {
-    //		    // Query: CHA -> CHA
-    //		    case DirectoryWriteHit:
-    //		    case DirectoryReadMiss:
-    //		    case DirectoryWriteMiss:
-    //		    case DirectoryCachelineForwardRequest:
-    //		    case DirectoryEvictedFromSharedCache:
-    //		    case DirectoryEvictedFromCoherentCache:
-    //		    case DirectorySharedToExclusive:
-    //		        this.packetForward++; break;
-    //		    // Data: L2/MM -> TILE
-    //		    case Mem_Response:
-    //                        this.packetData++; break;
-    //		    case Cache_Read:
-    //		    case Cache_Write:
-    //                        this.packetQuery++; break;
-    //		    // Forward: CHA -> Memory
-    //		    default: break;
-    //		}
     ((AddressCarryingEvent) event).hopLength++;
     this.connection[nextID].getPort().put( // posting event to nextID
         event.update(eventQ, 1, this, this.connection[nextID], requestType));
