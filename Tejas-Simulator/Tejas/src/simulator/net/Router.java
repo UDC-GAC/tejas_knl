@@ -171,21 +171,14 @@ public class Router extends Switch {
     }
     
     /************************************************************************
-     * Method Name : handleEvent
-     * Purpose : handle the event request and service it
-     * Parameters : eventq and event id
+     * Method Name : countPacketType
+     * Purpose : count the number of packets received and their type
+     * Parameters : RequestType
      * Return : void
      *************************************************************************/
-    @Override
-    public void handleEvent(EventQueue eventQ, Event event) {
-        // TODO Auto-generated method stub
-        RoutingAlgo.DIRECTION nextID;
-        boolean reqOrReply;
-        ID currentId = id;
-        ID destinationId = ((NocInterface) event.getActualProcessingElement()
-                .getComInterface()).getId();
-        RequestType requestType = event.getRequestType();
-        switch (requestType) {
+    public void countPacketType(RequestType req) {
+        this.hopCounters++;
+        switch (req) {
             // Query: CHA -> CHA
             case DirectoryCachelineForwardRequest:
                 this.packetForward++;
@@ -213,6 +206,23 @@ public class Router extends Switch {
             default:
                 break;
         }
+    }
+    
+    /************************************************************************
+     * Method Name : handleEvent
+     * Purpose : handle the event request and service it
+     * Parameters : eventq and event id
+     * Return : void
+     *************************************************************************/
+    @Override
+    public void handleEvent(EventQueue eventQ, Event event) {
+        // TODO Auto-generated method stub
+        RoutingAlgo.DIRECTION nextID;
+        boolean reqOrReply;
+        ID currentId = id;
+        ID destinationId = ((NocInterface) event.getActualProcessingElement()
+                .getComInterface()).getId();
+        RequestType requestType = event.getRequestType();
         
         event.setEventTime(0);
         
@@ -254,8 +264,9 @@ public class Router extends Switch {
                                                                // deadlock
             // If buffer is available forward the event
             if (this.CheckNeighbourBuffer(nextID, reqOrReply)) {
-                // post event to nextID
-                this.hopCounters++;
+                // it should be counted when the packet is leaving the router in order
+                // to guarantee that is only counted once, right?
+                this.countPacketType(requestType);
                 ((AddressCarryingEvent) event).hopLength++;
                 this.GetNeighbours().elementAt(nextID.ordinal()).getPort()
                         .put(event.update(eventQ, latency, // this.getLatency()
