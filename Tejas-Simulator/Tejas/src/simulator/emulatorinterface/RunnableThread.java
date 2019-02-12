@@ -301,28 +301,6 @@ public class RunnableThread implements Encoding, Runnable {
         }
     }
     
-    // void errorCheck(int tidApp, int emuid, int queue_size,
-    // long numReads, long v) {
-    //
-    // // some error checking
-    // // threadParams[emuid].totalRead += numReads;
-    // long totalRead = threadParams[emuid].totalRead;
-    // long totalProduced = ipcBase.totalProduced(tidApp);
-    //
-    // if (totalRead > totalProduced) {
-    // System.out.println("numReads=" + numReads + " > totalProduced="
-    // + totalProduced + " !!");
-    //
-    // System.out.println("queue_size=" + queue_size);
-    // System.exit(1);
-    // }
-    //
-    // if (queue_size < 0) {
-    // System.out.println("queue less than 0");
-    // System.exit(1);
-    // }
-    // }
-    
     private boolean statusOfOtherThreads() {
         // returns true if any other live threads have empty inputtopipeline
         for (int i = 0; i < EMUTHREADS; i++) {
@@ -371,14 +349,17 @@ public class RunnableThread implements Encoding, Runnable {
             PipelineInterface pipeTmp = null;
             int c = 0;
             for (c = 0; c < cores.length; ++c) {
-                if (cores[c].getCore_number()==SystemConfig.coreAffinity[i]) {
+                if (cores[c].getCore_number() == SystemConfig.coreAffinity[i]) {
                     pipeTmp = cores[c].getPipelineInterface();
                     break;
                 }
             }
-            System.out.println("[DEBUG] " + threadName + " id = " + id + " core = " + cores[c].getCore_number() + " (core affinity = " + SystemConfig.coreAffinity[i] + ")");
-
-            //pipelineInterfaces[i] = cores[i].getPipelineInterface();
+            System.out.println(
+                    "[DEBUG] " + threadName + " id = " + id + " core = "
+                            + cores[c].getCore_number() + " (core affinity = "
+                            + SystemConfig.coreAffinity[i] + ")");
+            
+            // pipelineInterfaces[i] = cores[i].getPipelineInterface();
             pipelineInterfaces[i] = pipeTmp;
             inputToPipeline[i] = new GenericCircularQueue<Instruction>(
                     Instruction.class, INSTRUCTION_THRESHOLD);
@@ -566,7 +547,7 @@ public class RunnableThread implements Encoding, Runnable {
             int tidEmu) {
         
         // System.out.println("&processPacket " + (++numProcessPackets) + " : "
-            // + pnew.ip);
+        // + pnew.ip);
         
         boolean isSpaceInPipelineBuffer = true;
         

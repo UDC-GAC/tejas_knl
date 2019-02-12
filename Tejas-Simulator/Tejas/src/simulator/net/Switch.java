@@ -53,6 +53,7 @@ public class Switch extends SimulationElement{
 	public int packetQuery         = 0;
 	public int packetData          = 0;
 	public int packetForward       = 0;
+	public int packetEvicted       = 0;
 	
 	public Switch(NocConfig nocConfig,int level){
 		super(nocConfig.portType,
