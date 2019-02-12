@@ -37,6 +37,7 @@ import dram.MainMemoryDRAMController;
 import config.MainMemoryConfig;
 
 public class Statistics {
+    
     static FileWriter outputFileWriter;
     
     static String     benchmark;
@@ -114,8 +115,7 @@ public class Statistics {
         }
         
         // for each java thread, print number of instructions provided by PIN
-        // and number of instructions
-        // forwarded to the pipeline
+        // and number of instructions forwarded to the pipeline
         try {
             outputFileWriter.write("\n");
             outputFileWriter.write("[Translator Statistics]\n");
@@ -130,8 +130,9 @@ public class Statistics {
                 // outputFileWriter.write("Number of Micro-Ops\t=\t" +
                 // noOfMicroOps[i] + " \n");
                 // outputFileWriter.write("MicroOps/CISC = " +
-                // ((double)(numInstructions[i]))/((double)(noOfMicroOps[i]))
-                // + "\n"); outputFileWriter.write("\n");
+                // ((double)(numInstructions[i]))/((double)(noOfMicroOps[i])) +
+                // "\n");
+                // outputFileWriter.write("\n");
             }
             outputFileWriter.write(
                     "Number of micro-ops\t\t=\t" + totalNumMicroOps + "\n");
@@ -262,6 +263,7 @@ public class Statistics {
                 outputFileWriter.write("Saturating bits = "
                         + coreConfig.branchPredictor.saturating_bits + "\n");
                 outputFileWriter.write("\n");
+                
             }
             outputFileWriter.write("\n");
         } catch (IOException e) {
@@ -502,6 +504,7 @@ public class Statistics {
                         + nuca.migrations + "\n");
                 outputFileWriter.write("Average number of NUCA Events\t=\t"
                         + (float) nuca.hopCount / access + "\n");
+                
             }
             
             if (SystemConfig.interconnect == Interconnect.Noc) {
@@ -560,13 +563,16 @@ public class Statistics {
                                 + j + "] =\t" + rout.packetData + "\n");
                         outputFileWriter.write("packetsQueryRouter[" + i + "]["
                                 + j + "] =\t" + rout.packetQuery + "\n");
-                        outputFileWriter
-                                .write("packetsForwardRouter[" + i + "][" + j
-                                        + "] =\t" + rout.packetForward + "\n");
+                        outputFileWriter.write("packetsForwardRouter[" + i
+                                + "][" + j + "] =\t" + rout.packetForward + "\n");
+                        outputFileWriter.write("packetsEvictedRouter[" + i
+                                + "][" + j + "] =\t" + rout.packetEvicted + "\n");
                     }
                 }
+                
             }
             if (SimulationConfig.nucaType != NucaType.NONE) {
+                
                 /*
                  * TODO anuj
                  * double totalNucaBankPower =
@@ -631,6 +637,7 @@ public class Statistics {
                     totalReadAndWrite = 0L;
                     
                     for (int i = 0; i < SystemConfig.mainMemoryConfig.numRanks; i++) {
+                        
                         outputFileWriter.write("\t Rank " + (i + 1) + "\n");
                         
                         for (int j = 0; j < SystemConfig.mainMemoryConfig.numBanks; j++) {
@@ -652,6 +659,7 @@ public class Statistics {
                                 "\t Total Writes: " + totalWriteRank + "\n");
                         totalReadRank = 0L;
                         totalWriteRank = 0L;
+                        
                     }
                     outputFileWriter.write("\nTotal Reads and Writes: "
                             + (totalReadAndWrite * 64) + " Bytes\n");
@@ -903,8 +911,7 @@ public class Statistics {
          * for(int i = 0; i < cache.getContainingMemSys().length; i++)
          * {
          * outputFileWriter.write(cache.getContainingMemSys()[i].getCore().
-         * getCore_number()
-         * + " ");
+         * getCore_number() + " ");
          * }
          * }
          */
@@ -973,7 +980,9 @@ public class Statistics {
         }
         
         if (SimulationConfig.pinpointsSimulation == true) {
+            
         }
+        
     }
     
     public static void openStream() {
@@ -985,6 +994,7 @@ public class Statistics {
             File outputFile = new File(SimulationConfig.outputFileName);
             
             if (outputFile.exists()) {
+                
                 // rename the previous output file
                 Date lastModifiedDate = new Date(outputFile.lastModified());
                 File backupFile = new File(SimulationConfig.outputFileName + "_"
@@ -1001,6 +1011,7 @@ public class Statistics {
             outputFileWriter = new FileWriter(outputFile);
             
         } catch (IOException e) {
+            
             StringBuilder sb = new StringBuilder();
             sb.append("DEFAULT_");
             Calendar cal = Calendar.getInstance();
@@ -1147,6 +1158,7 @@ public class Statistics {
                 Statistics.printDataWorkingSetStats();
             }
         } catch (IOException e) {
+            
         }
         
         Statistics.printSimulationTime();
@@ -1172,14 +1184,10 @@ public class Statistics {
             if (cache.getClass() != Cache.class) {
                 // if (((NucaCache)cache).nucaType != NucaType.NONE )
                 // {
-                // averageHopLength =
-                // ((NucaCache)cache).getAverageHoplength(); maxHopLength
-                // =
-                // ((NucaCache)cache).getMaxHopLength(); minHopLength
-                // =
-                // ((NucaCache)cache).getMinHopLength();
-                // Statistics.nocTopology
-                // =
+                // averageHopLength = ((NucaCache)cache).getAverageHoplength();
+                // maxHopLength = ((NucaCache)cache).getMaxHopLength();
+                // minHopLength = ((NucaCache)cache).getMinHopLength();
+                // Statistics.nocTopology =
                 // ((NocInterface)((NucaCache)cache).cacheBank.get(0).comInterface).getRouter().topology.name();
                 // Statistics.nocRoutingAlgo =
                 // ((NocInterface)((NucaCache)cache).cacheBank.get(0).comInterface).getRouter().rAlgo.name();
@@ -1189,9 +1197,9 @@ public class Statistics {
                 // ((NocInterface)((NucaCache)cache).cacheBank.get(i).comInterface).getRouter().hopCounters;
                 // }
                 // if(Statistics.nocTopology.equals("FATTREE") ||
-                // Statistics.nocTopology.equals("OMEGA")
-                // || Statistics.nocTopology.equals("BUTTERFLY")) { for(int k =
-                // 0 ;
+                // Statistics.nocTopology.equals("OMEGA") ||
+                // Statistics.nocTopology.equals("BUTTERFLY")) {
+                // for(int k = 0 ;
                 // k<((NucaCache)cache).noc.intermediateSwitch.size();k++){
                 // Statistics.hopcount +=
                 // ((NucaCache)cache).noc.intermediateSwitch.get(k).hopCounters;
@@ -1201,7 +1209,9 @@ public class Statistics {
                 // Statistics.totalNucaBankAccesses =
                 // ((NucaCache)cache).getTotalNucaBankAcesses();
             }
+            
         }
+        
     }
     
     public static long getNumCISCInsn(int javaTid, int tidEmu) {
@@ -1215,4 +1225,5 @@ public class Statistics {
     public static String formatDouble(double d) {
         return String.format("%.4f", d);
     }
+    
 }

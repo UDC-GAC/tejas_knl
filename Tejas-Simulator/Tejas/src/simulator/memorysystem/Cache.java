@@ -364,13 +364,14 @@ public class Cache extends SimulationElement {
         if (cl != null) {
             cacheHit(addr, requestType, cl, event);
         } else {
-            //this.misses++; /* this counts writes + misses */
+            // this.misses++; /* this counts writes + misses */
             if (this.mycoherence != null) {
                 if (requestType == RequestType.Cache_Write) {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
                     this.misses++;
-                    //System.out.println("L2 read miss " + this.id + " addr " + addr);
+                    // System.out.println("L2 read miss " + this.id + " addr " +
+                    // addr);
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
@@ -412,7 +413,7 @@ public class Cache extends SimulationElement {
     
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
-        //System.out.println("memResponse " + addr);   
+        // System.out.println("memResponse " + addr);
         
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
@@ -446,7 +447,11 @@ public class Cache extends SimulationElement {
             }
             addEventAtLowerCache(event, c);
         } else {
-            Core core = main.ArchitecturalComponent.getCores()[0]; // to ensure that always has a core to send...
+            Core core = main.ArchitecturalComponent.getCores()[0]; // to ensure
+                                                                   // that
+                                                                   // always has
+                                                                   // a core to
+                                                                   // send...
             if (e != null) {
                 core = ArchitecturalComponent.getCore(e.coreId);
             }
@@ -481,35 +486,19 @@ public class Cache extends SimulationElement {
             br = new BufferedReader(new FileReader(orgFile));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
-            
-            long mAddr = -1;
-            long mSize = 0;
-            long dAddr = -1;
-            long dSize = 0;
-            
             while (line != null) {
                 StringTokenizer st = new StringTokenizer(line, "\t");
-                String module = st.nextToken();
                 long size = Long.parseLong(st.nextToken());
-                long addr = Long.parseLong(st.nextToken());
-                if (module.equals("MCDRAM")) {
-                    mSize += size;
-                    if (mAddr == -1)
-                        mAddr = addr;
-                }
-                if (module.equals("DDR")) {
-                    dSize += size;
-                    if (dAddr == -1)
-                        dAddr = addr;
-                }
+                long virt = Long.parseLong(st.nextToken());
+                long phys = Long.parseLong(st.nextToken());
+                SystemConfig.physAddr.put(virt, phys);
                 line = br.readLine();
+                //System.out.println("[JAVA,DEBUG] virt = " + virt + "\tphys = " + phys);
             }
-            SystemConfig.setMCDRAMaddr(mAddr);
-            SystemConfig.setMCDRAMsize(mSize);
-            SystemConfig.setDDRsize(dSize);
-            SystemConfig.setDDRaddr(dAddr);
+            SystemConfig.mcdramAddr = 1;
         } catch (Exception e) {
-            System.out.println("Something went wrong with addr.txt file...");
+            e.printStackTrace();
+            misc.Error.showErrorAndExit("Something went wrong with file addr.txt, exiting...");
         } finally {
             try {
                 br.close();
@@ -636,14 +625,14 @@ public class Cache extends SimulationElement {
     public void fillAndSatisfyRequests(long addr) {
         int numPendingEvents = mshr.getNumPendingEventsForAddr(addr);
         // WHY ARE NUMPENDING EVENTS ADDED?
-        //misses += numPendingEvents;
-        //noOfRequests += numPendingEvents;
-        //noOfAccesses += 1 + numPendingEvents;
+        // misses += numPendingEvents;
+        // noOfRequests += numPendingEvents;
+        // noOfAccesses += 1 + numPendingEvents;
         noOfRequests += numPendingEvents;
-        //noOfAccesses++;
+        // noOfAccesses++;
         
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
-        //System.out.println("fillAndSatisfyRequests " + addr);
+        // System.out.println("fillAndSatisfyRequests " + addr);
         handleEvictedLine(evictedLine);
         processEventsInMSHR(addr);
     }
@@ -978,8 +967,7 @@ public class Cache extends SimulationElement {
             CacheLine ll = c.lines[nextIdx];
             if (ll.isValid() == false
                     && mshr.isAddrInMSHR(ll.getAddress()) == false
-                    || (c.nucaType != NucaType.NONE
-                            && ll.isValid() == false)) {
+                    || (c.nucaType != NucaType.NONE && ll.isValid() == false)) {
                 fillLine = ll;
                 break;
             }
@@ -1042,15 +1030,16 @@ public class Cache extends SimulationElement {
     
     public void updateStateOfCacheLine(long addr, MESIF newState) {
         CacheLine cl = this.access(addr);
-        // added by markos (supporting distributed directory) 
+        // added by markos (supporting distributed directory)
         if (mycoherence != null) {
-            CacheLine dirEntry = access(addr,(Cache)mycoherence);
-            if (dirEntry!=null) {
+            CacheLine dirEntry = access(addr, (Cache) mycoherence);
+            if (dirEntry != null) {
                 dirEntry.setState(newState);
             }
         }
         CacheLine dirEntry = access(addr, SystemConfig.globalDir);
-        if (dirEntry!=null) dirEntry.setState(newState);
+        if (dirEntry != null)
+            dirEntry.setState(newState);
         if (cl != null) {
             cl.setState(newState);
             if (newState == MESIF.INVALID && mshr.isAddrInMSHR(addr)) {

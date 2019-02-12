@@ -13,3 +13,6 @@
 *.obj
 *.csv
 *.ipynb
+*.o
+*.so
+*backup

@@ -65,7 +65,7 @@
     <KNL>true</KNL>
     <ClusterMode>Quad</ClusterMode> <!-- Quad, SNC, Hemi, A2A -->
     <MemoryMode>Flat</MemoryMode> <!-- Flat, Cache-->
-    <Affinity>Scatter</Affinity> <!-- Scatter, Colocated, Linear -->
+    <Affinity>Colocated</Affinity> <!-- Scatter, Colocated, Linear -->
 
     <CacheBusLatency>1</CacheBusLatency>			
     

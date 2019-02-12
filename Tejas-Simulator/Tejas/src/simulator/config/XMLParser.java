@@ -445,8 +445,33 @@ public class XMLParser {
             }
             if (clusterMode.equals("A2A")) {
                 SystemConfig.clusterMode = SystemConfig.ClusterMode.A2A;
+            }  
+        }
+        
+        if (SystemConfig.knl) {
+            String memoryMode = getImmediateString("ClusterMode", systemElmnt);
+            if (memoryMode.equals("Flat")) {
+                SystemConfig.memoryMode = SystemConfig.MemoryMode.Flat;
             }
-            
+            if (memoryMode.equals("Cache")) {
+                SystemConfig.memoryMode = SystemConfig.MemoryMode.Cache;
+            }
+        }
+        
+        if (SystemConfig.knl) {
+            String affinityMode = getImmediateString("Affinity", systemElmnt);
+            if (affinityMode.equals("Colocated")) {
+                SystemConfig.coreAffinityMode = SystemConfig.Affinity.Colocated;
+                SystemConfig.coreAffinity = SystemConfig.coreAffinityColocated;
+            }
+            if (affinityMode.equals("Scatter")) {
+                SystemConfig.coreAffinityMode = SystemConfig.Affinity.Scatter;
+                SystemConfig.coreAffinity = SystemConfig.coreAffinityScatter;
+            }
+            if (affinityMode.equals("Linear")) {
+                SystemConfig.coreAffinityMode = SystemConfig.Affinity.Linear;
+                SystemConfig.coreAffinity = SystemConfig.coreAffinityLinear;
+            }
         }
         
         SystemConfig.mainMemoryLatency = Integer
