@@ -87,7 +87,26 @@ public class Switch extends SimulationElement{
     public void collision() {
 	numCollisions++;
     }
-  }
+    public int nextIdbutterflyOmega(String binary)
+    {
+            if(binary.charAt(level) == '0')
+                    return 2;
+            else
+                    return 3;
+    }
+    
+    public int nextIdFatTree(int elementNumber)
+    {
+            if(elementNumber < range[0] || elementNumber > range[1])
+                    return 0;
+            else
+            {
+                    if((range[0] + range[1])/2 < elementNumber)
+                            return 1;
+                    else
+                            return 3;
+            }
+}
   /************************************************************************
    * Method Name  : AllocateBuffer
    * Purpose      : check whether buffer available

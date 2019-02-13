@@ -70,30 +70,33 @@ public class CHA extends Cache implements Coherence {
     
     // made for Quadrant cluster mode
     public CHA getDestinationChaQuadrant(long addr) {
-        long tmpAddr = addr - (addr % 4096);
-        if (SystemConfig.physAddr.containsKey(tmpAddr)) {
-            long physAddr = (addr % 4096)
-                    + SystemConfig.physAddr.get(tmpAddr)
-                    - SystemConfig.mcdramStartAddr;
-            if (physAddr < 0) {
-                misc.Error.showErrorAndExit("WHAT THE FUCKKKKKK?");
+        long mapLine = 0;
+        long virtPage = addr - (addr % 4096);
+        if (SystemConfig.physAddr.containsKey(virtPage)) {
+            long offset = addr % 4096;
+            long physPage = SystemConfig.physAddr.get(virtPage);
+            long physAddr = (offset + physPage);
+            long physOffset = physAddr - SystemConfig.mcdramStartAddr;
+            if (physOffset < 0) {
+                misc.Error.showErrorAndExit("WHAT THE F**K?");
             }
-            tmpAddr = physAddr/64;
+            // mapLine = physOffset / 64;
+            mapLine = physOffset >> 6;
             //System.out.println("physLine = " + physLine + " for virtAddr = "
             //        + addr + " (page " + tmpAddr + ")");
             
         } else {
             Random rand = new Random();
-            tmpAddr = rand.nextInt(38);
+            mapLine = rand.nextInt(38);
         }
         
         // find CHA in list and return it
         CHA c = null;
-        int cha = SystemConfig.mappingKNL[(int) tmpAddr];
+        int cha = SystemConfig.mappingKNL[(int) mapLine];
         for (int i = 0; i < SystemConfig.mappingCHA.length; ++i) {
-            CHA tmp = (CHA) SystemConfig.chaList.get(i);
-            if (tmp.id == cha) {
-                c = tmp;
+            CHA chaTmp = (CHA) SystemConfig.chaList.get(i);
+            if (chaTmp.id == cha) {
+                c = chaTmp;
             }
         }
         return c;
