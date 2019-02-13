@@ -1,5 +1,5 @@
 /*****************************************************************************
-				Tejas Simulator
+                                Tejas Simulator
 ------------------------------------------------------------------------------------------------------------
 
    Copyright [2010] [Indian Institute of Technology, Delhi]
@@ -16,7 +16,7 @@
    limitations under the License.
 ------------------------------------------------------------------------------------------------------------
 
-	Contributors:  Eldhose Peter
+        Contributors:  Eldhose Peter
 *****************************************************************************/
 package net;
 
@@ -87,138 +87,106 @@ public class Switch extends SimulationElement{
     public void collision() {
 	numCollisions++;
     }
-	
-	public int nextIdbutterflyOmega(String binary)
-	{
-		if(binary.charAt(level) == '0')
-			return 2;
-		else
-			return 3;
-	}
-	
-	public int nextIdFatTree(int elementNumber)
-	{
-		if(elementNumber < range[0] || elementNumber > range[1])
-			return 0;
-		else
-		{
-			if((range[0] + range[1])/2 < elementNumber)
-				return 1;
-			else
-				return 3;
-		}
-	}
-	/************************************************************************
-     * Method Name  : AllocateBuffer
-     * Purpose      : check whether buffer available
-     * Parameters   : none
-     * Return       : true if allocated , false if no buffer available
-     *************************************************************************/
-	public boolean AllocateBuffer()  // reqOrReplay = true=>incoming false=>outgoing 
-	{
-		if(this.availBuff>2)     //incoming request leave atleast one buff space
-			{						 //for outgoing request to avoid deadlock
-				this.availBuff --;
-				totalBufferAccesses++;
-				return true;
-			}
-		//numCollisions++;
-		return false;
-	}
-	/*******************************************************
-	 * Allocates buffer by checking the direction of the request
-	 * Giving priority to the outgoing request
-	 * To avoid deadlock
-	 * @param nextId
-	 * @return
-	 *******************************************************/
-	public boolean AllocateBuffer(DIRECTION nextId)  // reqOrReplay = true=>incoming false=>outgoing 
-	{
-		if(this.availBuff>2)     //incoming request leave atleast one buff space
-		{						 //for outgoing request to avoid deadlock
-			this.availBuff --;
-			totalBufferAccesses++;
-			return true;
-		}
-		else{
-			if(nextId == DIRECTION.UP){
-				if(this.availBuff>1)     //incoming request leave atleast one buff space
-				{						 //for outgoing request to avoid deadlock
-					this.availBuff --;
-					totalBufferAccesses++;
-					return true;
-				}
-			}
-			else if(nextId == DIRECTION.LEFT){
-				if(this.availBuff>0)
-				{
-					totalBufferAccesses++;
-					this.availBuff --;
-					return true;
-				}
-			}
-		}
-		//numCollisions++;
-		return false;
-	}
-	/*******************************************************
-	 * Increment available number of buffers
-	 *******************************************************/
-	public void FreeBuffer()
-	{
-		this.availBuff ++;
-	}
-	
-	public int bufferSize()
-	{
-		return this.availBuff;
-	}
+    public int nextIdbutterflyOmega(String binary)
+    {
+            if(binary.charAt(level) == '0')
+                    return 2;
+            else
+                    return 3;
+    }
+    
+    public int nextIdFatTree(int elementNumber)
+    {
+            if(elementNumber < range[0] || elementNumber > range[1])
+                    return 0;
+            else
+            {
+                    if((range[0] + range[1])/2 < elementNumber)
+                            return 1;
+                    else
+                            return 3;
+            }
+}
+  /************************************************************************
+   * Method Name  : AllocateBuffer
+   * Purpose      : check whether buffer available
+   * Parameters   : none
+   * Return       : true if allocated , false if no buffer available
+   *************************************************************************/
+  public boolean AllocateBuffer() // reqOrReplay = true=>incoming false=>outgoing
+  {
+    if (this.availBuff > 2) // incoming request leave atleast one buff space
+    { // for outgoing request to avoid deadlock
+      this.availBuff--;
+      totalBufferAccesses++;
+      return true;
+    }
+    // numCollisions++;
+    return false;
+  }
+  /*******************************************************
+   * Allocates buffer by checking the direction of the request
+   * Giving priority to the outgoing request
+   * To avoid deadlock
+   * @param nextId
+   * @return
+   *******************************************************/
+  public boolean AllocateBuffer(DIRECTION nextId) // reqOrReplay = true=>incoming false=>outgoing
+  {
+    if (this.availBuff > 2) // incoming request leave atleast one buff space
+    { // for outgoing request to avoid deadlock
+      this.availBuff--;
+      totalBufferAccesses++;
+      return true;
+    } else {
+      if (nextId == DIRECTION.UP) {
+        if (this.availBuff > 1) // incoming request leave atleast one buff space
+        { // for outgoing request to avoid deadlock
+          this.availBuff--;
+          totalBufferAccesses++;
+          return true;
+        }
+      } else if (nextId == DIRECTION.LEFT) {
+        if (this.availBuff > 0) {
+          totalBufferAccesses++;
+          this.availBuff--;
+          return true;
+        }
+      }
+    }
+    // numCollisions++;
+    return false;
+  }
+  /*******************************************************
+   * Increment available number of buffers
+   *******************************************************/
+  public void FreeBuffer() {
+    this.availBuff++;
+  }
 
-	@Override
-	public void handleEvent(EventQueue eventQ, Event event) {
-		int nextID;
-		event.setEventTime(0);
-		ID destinationId = ((NocInterface)event.getProcessingElement().getComInterface()).getId();
-		int elementNumber = destinationId.gety();     //bank id interpreted as one row, multiple column number
-															//and second element gives the actual number and first number
-															//will be zero always.
-		String binary = Integer.toBinaryString(numColumns | elementNumber).substring(1);
-		RequestType requestType = event.getRequestType();
-		
-		if(topology == TOPOLOGY.BUTTERFLY || topology == TOPOLOGY.OMEGA)
-			nextID = nextIdbutterflyOmega(binary);			//binary representation of number needed for routing
-		else                                               //if(topology == TOPOLOGY.FATTREE)
-			nextID = nextIdFatTree(elementNumber);
-		this.hopCounters++;
-		
-		// custom packet taxonomy 
-		switch (requestType) {
-		    // Query: CHA -> CHA
-		    case DirectoryWriteHit:
-		    case DirectoryReadMiss:
-		    case DirectoryWriteMiss:
-		    case DirectoryCachelineForwardRequest:
-		    case DirectoryEvictedFromSharedCache:
-		    case DirectoryEvictedFromCoherentCache:
-		    case DirectorySharedToExclusive: 
-		        this.packetForward++; break;
-		    // Data: L2/MM -> TILE
-		    case Mem_Response:
-                        this.packetData++; break;
-		    case Cache_Read:
-		    case Cache_Write:
-                        this.packetQuery++; break;
-		    // Forward: CHA -> Memory
-		    default: break;
-		}
-		((AddressCarryingEvent)event).hopLength++;
-		this.connection[nextID].getPort().put(             //posting event to nextID
-				event.update(
-						eventQ,
-						1,
-						this, 
-						this.connection[nextID],
-						requestType));
-	}
+  public int bufferSize() {
+    return this.availBuff;
+  }
 
+  @Override
+  public void handleEvent(EventQueue eventQ, Event event) {
+    int nextID;
+    event.setEventTime(0);
+    ID destinationId = ((NocInterface) event.getProcessingElement().getComInterface()).getId();
+    int elementNumber = destinationId.gety(); // bank id interpreted as one row, multiple column
+                                              // number and second element gives the actual number
+                                              // and first number will be zero always.
+    String binary = Integer.toBinaryString(numColumns | elementNumber).substring(1);
+    RequestType requestType = event.getRequestType();
+
+    if (topology == TOPOLOGY.BUTTERFLY || topology == TOPOLOGY.OMEGA)
+      nextID = nextIdbutterflyOmega(binary); // binary representation of number needed for routing
+    else // if(topology == TOPOLOGY.FATTREE)
+      nextID = nextIdFatTree(elementNumber);
+    this.hopCounters++;
+
+    ((AddressCarryingEvent) event).hopLength++;
+    this.connection[nextID].getPort().put( // posting event to nextID
+        event.update(eventQ, 1, this, this.connection[nextID], requestType));
+  }
 }

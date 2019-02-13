@@ -80,7 +80,6 @@ public enum RequestType {
 	Reply_with_shared_copy,
 	Write_Modified_to_sharedmem, 
 	
-
 	TOKEN,
 	LOCAL_TOKEN,
 	PIPELINE_RESUME,
