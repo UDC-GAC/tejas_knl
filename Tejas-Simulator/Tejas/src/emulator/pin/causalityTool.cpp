@@ -843,16 +843,18 @@ VOID KNLafter(ADDRINT ret) {
   cout << "knl_alloc_data returns " << ret << endl;
   addrfile.open(ADDR_PATH, ofstream::out | ofstream::app);
   if (addrfile.is_open()) {
-    int npages = knlAllocSize / 4096;
+    //int npages = knlAllocSize / 4096;
+	int nlines = knlAllocSize / 64;
     int n;
     uint64_t base = ret;
     uint64_t phys = vtop(base);
     uint64_t virt = base;
-    for (n = 0; n < npages; ++n) {
+    for (n = 0; n < nlines; ++n) {
       phys = vtop(base);
       virt = base;
       addrfile << knlAllocSize << "\t" << virt << "\t" << phys << endl;
-      base += 4096;
+      //base += 4096;
+      base += 64;
     }
     cout << knlAllocSize << "\t" << virt << "\t" << phys << endl;
     addrfile.close();

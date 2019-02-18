@@ -337,6 +337,7 @@ public class RunnableThread implements Encoding, Runnable {
         pipelineInterfaces = new PipelineInterface[EMUTHREADS];
         for (int i = 0; i < EMUTHREADS; i++) {
             int id = javaTid * EMUTHREADS + i;
+            int id_core = SystemConfig.coreAffinity[i];
             
             IpcBase.glTable.getStateTable().put(id, new ThreadState(id));
             emulatorThreadState[i] = new EmulatorThreadState();
@@ -346,11 +347,11 @@ public class RunnableThread implements Encoding, Runnable {
             // IpcBase
             
             // CORE AFFINITY
-            PipelineInterface pipeTmp = null;
+            Core core = null;
             int c = 0;
             for (c = 0; c < cores.length; ++c) {
                 if (cores[c].getCore_number() == SystemConfig.coreAffinity[i]) {
-                    pipeTmp = cores[c].getPipelineInterface();
+                    core = cores[c];
                     break;
                 }
             }
@@ -359,17 +360,16 @@ public class RunnableThread implements Encoding, Runnable {
                             + cores[c].getCore_number() + " (core affinity = "
                             + SystemConfig.coreAffinity[i] + ")");
             
-            // pipelineInterfaces[i] = cores[i].getPipelineInterface();
-            pipelineInterfaces[i] = pipeTmp;
-            inputToPipeline[i] = new GenericCircularQueue<Instruction>(
+            pipelineInterfaces[id_core] = core.getPipelineInterface();
+            inputToPipeline[id_core] = new GenericCircularQueue<Instruction>(
                     Instruction.class, INSTRUCTION_THRESHOLD);
             
             // dynamicInstructionBuffer[i] = new DynamicInstructionBuffer();
             
             GenericCircularQueue<Instruction>[] toBeSet = (GenericCircularQueue<Instruction>[]) Array
                     .newInstance(GenericCircularQueue.class, 1);
-            toBeSet[0] = inputToPipeline[i];
-            pipelineInterfaces[i].setInputToPipeline(toBeSet);
+            toBeSet[0] = inputToPipeline[id_core];
+            pipelineInterfaces[id_core].setInputToPipeline(toBeSet);
         }
         
         this.javaTid = javaTid;

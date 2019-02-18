@@ -69,21 +69,47 @@ public class CHA extends Cache implements Coherence {
     }
     
     // made for Quadrant cluster mode
-    public CHA getDestinationChaQuadrant(long addr) {
+    public CHA getDestinationChaQuadrant(long addr, Event e) {
+//        long mapLine = 0;
+//        long virtPage = addr - (addr % 4096);
+//        if (SystemConfig.physAddr.containsKey(virtPage)) {
+//            long offset = addr % 4096;
+//            long physPage = SystemConfig.physAddr.get(virtPage);
+//            long physAddr = (offset + physPage);
+//            long physOffset = physAddr - SystemConfig.mcdramStartAddr;
+//            if (physOffset < 0) {
+//                misc.Error.showErrorAndExit("WHAT THE F**K?");
+//            }
+//            // mapLine = physOffset / 64;
+//            mapLine = physOffset >> 6;
+//            //System.out.println("physLine = " + physLine + " for virtAddr = "
+//            //        + addr + " (page " + tmpAddr + ")");
+//            
+//        } else {
+//            Random rand = new Random();
+//            mapLine = rand.nextInt(38);
+//        }
+        
         long mapLine = 0;
-        long virtPage = addr - (addr % 4096);
-        if (SystemConfig.physAddr.containsKey(virtPage)) {
-            long offset = addr % 4096;
-            long physPage = SystemConfig.physAddr.get(virtPage);
-            long physAddr = (offset + physPage);
-            long physOffset = physAddr - SystemConfig.mcdramStartAddr;
+        long offset = addr % 64;
+        long virtLine = addr - offset;
+        if (SystemConfig.physAddr.containsKey(virtLine)) {
+            long physLine = SystemConfig.physAddr.get(virtLine);
+            long physAddr = (offset + physLine);
+            long physOffset = physAddr - SystemConfig.mcdramPhysStartAddr;
             if (physOffset < 0) {
                 misc.Error.showErrorAndExit("WHAT THE F**K?");
             }
             // mapLine = physOffset / 64;
             mapLine = physOffset >> 6;
-            //System.out.println("physLine = " + physLine + " for virtAddr = "
-            //        + addr + " (page " + tmpAddr + ")");
+            int chaTmp = SystemConfig.mappingKNL[(int) mapLine];
+//            if ((e!=null)&&(e.coreId==28))
+//                System.out.println("[DEBUG] core 28 " + 
+//                        "physAddr = " + physAddr + 
+//                        "; physLine = " + physLine + 
+//                        "; virtAddr = " + addr + " (page " + virtLine + 
+//                        "); mapLine = " + mapLine 
+//                        + " CHA = " + chaTmp);
             
         } else {
             Random rand = new Random();
@@ -99,6 +125,7 @@ public class CHA extends Cache implements Coherence {
                 c = chaTmp;
             }
         }
+//        if ((e!=null)&&(e.coreId==28)) System.out.println("[DEBUG] core 28 to CHA[" + c.id + "]");
         return c;
     }
     
@@ -107,7 +134,7 @@ public class CHA extends Cache implements Coherence {
         incrementHitMissInformation(addr);
         // Create an event
         CHA directory = this;
-        directory = getDestinationChaQuadrant(addr);
+        directory = getDestinationChaQuadrant(addr, e);
         AddressCarryingEvent event = new AddressCarryingEvent(c.getEventQueue(),
                 0, c, directory, request, addr);
         if (e != null)
@@ -115,9 +142,9 @@ public class CHA extends Cache implements Coherence {
         SystemConfig.controlHops += getHopsCount(this, directory);
         // 2. Send event to directory
         c.sendEvent(event);
-        // System.out.println("cache " + c.id + " sending from " + this.id + "
-        // to " + directory.id
-        // + " a " + request + " with addr " + addr);
+//        if((e.coreId==28)&&(addr > SystemConfig.mcdramAddr)) {
+//            System.out.println("[DEBUG] L2[" + c.id + "] sending from CHA[" + this.id + "] to CHA[" + directory.id + "] a " + request + " with addr " + addr);
+//        }
         return event;
     }
     
@@ -405,6 +432,10 @@ public class CHA extends Cache implements Coherence {
         event = new AddressCarryingEvent(c.getEventQueue(), 0, c, memController,
                 request, addr);
         event.setCoreId(e.coreId);
+        
+        //if ((e.coreId == 28)&&(addr >= SystemConfig.mcdramStartAddr)) {
+        //    System.out.println("[DEBUG] coreId 28 asking MCDRAM[" + iface + "] from CHA[" + this.id + "]");
+        //}
         
         c.sendEvent(event);
     }

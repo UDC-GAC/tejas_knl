@@ -40,8 +40,6 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
-import java.util.Arrays;
-
 import net.ID;
 import net.NocInterface;
 import memorysystem.coherence.Coherence;
@@ -370,8 +368,8 @@ public class Cache extends SimulationElement {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
                     this.misses++;
-                    // System.out.println("L2 read miss " + this.id + " addr " +
-                    // addr);
+                    //if ((event.coreId==28)&&(addr > SystemConfig.mcdramStartAddr))
+                    //    System.out.println("[DEBUG] core 28 asking L2[" + this.id + "] (CHA[" + ((Cache)mycoherence).id + "])miss for addr = " + addr);
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
@@ -486,16 +484,21 @@ public class Cache extends SimulationElement {
             br = new BufferedReader(new FileReader(orgFile));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
+            StringTokenizer st = new StringTokenizer(line, "\t");
+            long size = Long.parseLong(st.nextToken());
+            long virt = Long.parseLong(st.nextToken());
+            long phys = Long.parseLong(st.nextToken());
+            SystemConfig.physAddr.put(virt, phys);
+            SystemConfig.mcdramAddr = virt;
+            line = br.readLine();
             while (line != null) {
-                StringTokenizer st = new StringTokenizer(line, "\t");
-                long size = Long.parseLong(st.nextToken());
-                long virt = Long.parseLong(st.nextToken());
-                long phys = Long.parseLong(st.nextToken());
+                st = new StringTokenizer(line, "\t");
+                size = Long.parseLong(st.nextToken());
+                virt = Long.parseLong(st.nextToken());
+                phys = Long.parseLong(st.nextToken());
                 SystemConfig.physAddr.put(virt, phys);
                 line = br.readLine();
-                //System.out.println("[JAVA,DEBUG] virt = " + virt + "\tphys = " + phys);
             }
-            SystemConfig.mcdramAddr = 1;
         } catch (Exception e) {
             e.printStackTrace();
             misc.Error.showErrorAndExit("Something went wrong with file addr.txt, exiting...");
@@ -726,7 +729,7 @@ public class Cache extends SimulationElement {
             if (event.coreId != -1)
                 mshr.addToMSHR(event);
         } else {
-            System.out.println(RequestType.Cache_Write);
+            //System.out.println(RequestType.Cache_Write);
             sendRequestToNextLevel(addr, RequestType.Cache_Write, event);
         }
     }

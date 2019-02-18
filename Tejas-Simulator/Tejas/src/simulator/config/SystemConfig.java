@@ -91,7 +91,7 @@ public class SystemConfig {
     public static long                ddrAddr               = -1;
     public static long                ddrSize               = 0; // todo
     
-    public static long                mcdramStartAddr       = 0x3040000000L;
+    public static long                mcdramPhysStartAddr   = 0x3040000000L;
     public static HashMap<Long, Long> physAddr              = new HashMap<Long, Long>();
     
     public static Vector<Coherence>   chaList               = new Vector<Coherence>();
