@@ -52,8 +52,9 @@ Shm::release_lock(packet *map) {
 }
 
 
-Shm::Shm(int maxNumActiveThreads, void (*lock)(int), void (*unlock)(int)) : IPCBase(maxNumActiveThreads, lock, unlock)
+Shm::Shm(int maxNumActiveThreads/*, void (*lock)(int), void (*unlock)(int)*/)// : IPCBase(maxNumActiveThreads, lock, unlock)
 {
+	MaxNumActiveThreads = maxNumActiveThreads;
 	
 	tldata = new THREAD_DATA[MaxNumActiveThreads];
 		int size = (COUNT + 5) * sizeof(packet)*MaxNumActiveThreads;
@@ -111,8 +112,9 @@ Shm::Shm(int maxNumActiveThreads, void (*lock)(int), void (*unlock)(int)) : IPCB
 	isSubsetsimComplete = false;
 }
 
-Shm::Shm (uint64_t pid, int maxNumActiveThreads, void (*lock)(int), void (*unlock)(int)) : IPCBase(maxNumActiveThreads, lock, unlock)
+Shm::Shm (uint64_t pid, int maxNumActiveThreads/*, void (*lock)(int), void (*unlock)(int)*/)// : IPCBase(maxNumActiveThreads, lock, unlock)
 {
+	MaxNumActiveThreads = maxNumActiveThreads;
 	
 	tldata = new THREAD_DATA[MaxNumActiveThreads];
 	        int size = (COUNT + 5) * sizeof(packet)*MaxNumActiveThreads;
@@ -146,7 +148,9 @@ Shm::Shm (uint64_t pid, int maxNumActiveThreads, void (*lock)(int), void (*unloc
 	// get a segment for this key. This key is shared with the JNI through common.h
 	size = (COUNT+5) * sizeof(packet)*MaxNumActiveThreads;
 	if ((shmid = shmget(key, size, 0666)) < 0) {
-		perror("shmget in pin ");
+		printf("\n\nkey = %d, size = %d ; ", key, size); 
+		//fflush(stdout);
+		perror("shmget in pin");
 		exit(1);
 	}
 
@@ -171,6 +175,9 @@ Shm::Shm (uint64_t pid, int maxNumActiveThreads, void (*lock)(int), void (*unloc
 
 	isSubsetsimComplete=false;
 	ap_bh_counter = 0;
+
+	//printf("Shm(): ");fflush(stdout);
+	//print_thread_data(&tldata[0]);
 }
 
 
@@ -180,13 +187,17 @@ Shm::Shm (uint64_t pid, int maxNumActiveThreads, void (*lock)(int), void (*unloc
 int
 Shm::analysisFn (int tid,uint64_t ip, uint64_t val, uint64_t addr)
 {
-	(*lock)(tid);
+	//(*lock)(tid);
 	THREAD_DATA *myData = &tldata[tid];
+
+	//printf("analysisFn: ");fflush(stdout);
+	//print_thread_data(myData);
+	
 	// if my local queue is full, I should write to the shared memory and return if cannot return
 	// write immediately, so that PIN can yield this thread.
 	if (myData->tlqsize == locQ) {
 		if (Shm::shmwrite(tid,0, -1)==-1) {
-			(*unlock)(tid);
+			//(*unlock)(tid);
 			return -1;
 		}
 	}
@@ -205,9 +216,10 @@ Shm::analysisFn (int tid,uint64_t ip, uint64_t val, uint64_t addr)
 
 	sendPacket->tgt = (uint64_t)addr;
 
+     //printf("The packet are %ld %ld %ld ********",sendPacket->ip,sendPacket->value,sendPacket->tgt);
 	*in = (*in + 1) % locQ;
 	myData->tlqsize++;
-	(*unlock)(tid);
+	//(*unlock)(tid);
 	return 0;
 }
 
@@ -230,6 +242,9 @@ Shm::onThread_start (int tid)
 	shmem[COUNT + 1].value = 0; // flag[0] = 0
 	shmem[COUNT + 2].value = 0; // flag[1] = 0
 	//release_lock(shmem);
+
+	//printf("onThread_start: ");fflush(stdout);
+	//print_thread_data(myData);
 
 }
 
@@ -265,7 +280,7 @@ int Shm::onSubset_finish (int tid, long numCISC)
 				continue;
 			}
 		}
-		std::cout<<"after1\n";fflush(stdout);
+		//std::cout<<"after1\n";fflush(stdout);
 
 		// last write to our shared memory. This time write a -2 in the 'value' field of the packet
 		int ret = Shm::shmwrite(tid,2, numCISC);
@@ -308,11 +323,11 @@ Shm::shmwrite (int tid, int last, long numCISC)
 		}
 	}
 
-	static int num_shmem=0;
+	//static int num_shmem=0;
 	//pthread_mutex_lock(&mul_lock);
 	//pthread_mutex_unlock(&mul_lock);
 	int queue_size;
-	int numWrite;
+	uint32_t numWrite;
 
 	THREAD_DATA *myData = &tldata[tid];
 	packet* shmem = myData->shm;
@@ -338,15 +353,15 @@ Shm::shmwrite (int tid, int last, long numCISC)
 		numWrite = numWrite<myData->tlqsize ? numWrite:myData->tlqsize;
 		
 		if(shm_debug_queue) {
-			printf("PRODUCER: queue_size=%ld, queue_num_free_slots=%ld, and numWrite=%ld\n", queue_size, (COUNT-queue_size	), numWrite);
+			printf("PRODUCER: queue_size=%d, queue_num_free_slots=%d, and numWrite=%d\n", queue_size, (COUNT-queue_size	), numWrite);
 			fflush(stdout);
 		}
 
 		
-		for (int i=0; i< numWrite; i++) {
+		for (uint32_t i=0; i< numWrite; i++) {
 
 			if(printIPTrace==true) {
-				fprintf(pinTraceFile[tid], "pinTrace[%d] %d : %ld  : %ld  : %d\n", tid, (++numShmWritePackets[tid]),
+				fprintf(pinTraceFile[tid], "pinTrace[%d] %d : %ld  : %ld  : %ld\n", tid, (++numShmWritePackets[tid]),
 						myData->tlq[(myData->out+i)%locQ].ip,
 						myData->tlq[(myData->out+i)%locQ].value,
 						myData->tlq[(myData->out+i)%locQ].tgt);
@@ -400,7 +415,7 @@ Shm::shmwrite (int tid, int last, long numCISC)
 	myData->prod_ptr = (myData->prod_ptr + numWrite) % COUNT;
 	
 	if(shm_debug_queue) {
-		printf("PRODUCER: prod_ptr=%ld, and numWrite=%ld\n", myData->prod_ptr, numWrite);
+		printf("PRODUCER: prod_ptr=%d, and numWrite=%d\n", myData->prod_ptr, numWrite);
 		fflush(stdout);
 	}
 
@@ -457,5 +472,9 @@ Shm::isSubsetsimCompleted()
 	return isSubsetsimComplete;
 }
 
+void Shm::print_thread_data(THREAD_DATA * td)
+{
+	printf("tlqsize = %u;\tin = %u;\tout = %u;\tprod_ptr = %u;\ttot_prod = %lu;\tsum = %lu\n\n", td->tlqsize, td->in, td->out, td->prod_ptr, td->tot_prod, td->sum); fflush(stdout);
+}
 
 } // namespace IPC

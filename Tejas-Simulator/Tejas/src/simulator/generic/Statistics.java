@@ -481,6 +481,11 @@ public class Statistics {
                 addToConsolidatedCacheList(c);
             }
             
+            outputFileWriter.write("\n\n[L2 - CHA]\n\n");
+            for (Cache c : ArchitecturalComponent.getSharedCacheList()) {
+                printCacheCHAStats(c);
+            }
+            
             outputFileWriter.write("\n\n[Consolidated Stats For Caches]\n\n");
             for (Map.Entry<String, Vector<Cache>> entry : consolidatedCacheList
                     .entrySet()) {
@@ -682,6 +687,18 @@ public class Statistics {
         }
     }
     
+    private static void printCacheCHAStats(Cache c) {
+        try {
+            outputFileWriter.write("L2[" + c.id + "]\n");
+            for (int cha = 0; cha < 38; ++cha) {
+                outputFileWriter.write("\tCHA[" + cha + "] = " + c.reqCHA[cha] + "\n");            
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
     static Hashtable<String, Vector<Cache>> consolidatedCacheList = new Hashtable<String, Vector<Cache>>();
     
     private static void addToConsolidatedCacheList(Cache c) {

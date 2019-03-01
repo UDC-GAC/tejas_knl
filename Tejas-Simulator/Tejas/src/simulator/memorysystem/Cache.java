@@ -78,21 +78,14 @@ public class Cache extends SimulationElement {
     public String                  nextLevelName; // Name of the next level
                                                   // cache according to
                                                   // the configuration file
-    public ArrayList<Cache>        prevLevel       = new ArrayList<Cache>(); // Points
-                                                                             // towards
-                                                                             // the
-                                                                             // previous
-                                                                             // level
-                                                                             // in
-                                                                             // the
-                                                                             // cache
-                                                                             // hierarchy
+    public ArrayList<Cache>        prevLevel       = new ArrayList<Cache>();
     public Cache                   nextLevel; // Points towards the next level
                                               // in the cache
                                               // hierarchy
     protected CacheLine            lines[];
     
     public long                    noOfRequests;
+    public long[]                  reqCHA          = new long[38];
     public long                    noOfAccesses;
     public long                    noOfResponsesReceived;
     public long                    noOfResponsesSent;
@@ -168,8 +161,6 @@ public class Cache extends SimulationElement {
         if (this.containingMemSys == null) {
             // Use the core memory system of core 0 for all the shared caches.
             this.isSharedCache = true;
-            // this.containingMemSys =
-            // ArchitecturalComponent.getCore(0).getExecEngine().getCoreMemorySystem();
         }
         
         this.cacheName = cacheName;
@@ -368,8 +359,6 @@ public class Cache extends SimulationElement {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
                     this.misses++;
-                    //if ((event.coreId==28)&&(addr > SystemConfig.mcdramStartAddr))
-                    //    System.out.println("[DEBUG] core 28 asking L2[" + this.id + "] (CHA[" + ((Cache)mycoherence).id + "])miss for addr = " + addr);
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
@@ -411,7 +400,6 @@ public class Cache extends SimulationElement {
     
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
-        // System.out.println("memResponse " + addr);
         
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
@@ -500,8 +488,8 @@ public class Cache extends SimulationElement {
                 line = br.readLine();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            misc.Error.showErrorAndExit("Something went wrong with file addr.txt, exiting...");
+            // ugly hack...
+            SystemConfig.mcdramAddr = 0;
         } finally {
             try {
                 br.close();
@@ -632,10 +620,8 @@ public class Cache extends SimulationElement {
         // noOfRequests += numPendingEvents;
         // noOfAccesses += 1 + numPendingEvents;
         noOfRequests += numPendingEvents;
-        // noOfAccesses++;
         
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
-        // System.out.println("fillAndSatisfyRequests " + addr);
         handleEvictedLine(evictedLine);
         processEventsInMSHR(addr);
     }
@@ -729,7 +715,7 @@ public class Cache extends SimulationElement {
             if (event.coreId != -1)
                 mshr.addToMSHR(event);
         } else {
-            //System.out.println(RequestType.Cache_Write);
+            // System.out.println(RequestType.Cache_Write);
             sendRequestToNextLevel(addr, RequestType.Cache_Write, event);
         }
     }

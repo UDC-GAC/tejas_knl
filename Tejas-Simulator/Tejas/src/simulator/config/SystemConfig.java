@@ -152,6 +152,8 @@ public class SystemConfig {
     
     public static int[]               coreAffinity          = coreAffinityScatter;
     
+    public static int[]               coreLayout            = coreAffinityLinear;
+    
     public static String              addrFilePath          = "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/addr.txt";
     public static String              mapFilePath           = "/home/mhorro/mapping.knl";
     public static byte[]              mappingKNL;
