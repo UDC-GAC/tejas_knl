@@ -7,6 +7,7 @@ package emulatorinterface;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -130,8 +131,10 @@ public class RunnableThread implements Encoding, Runnable {
         
         while (true) {
             
-            for (int tidEmulator = 0; tidEmulator < EMUTHREADS; tidEmulator++) {
-                
+            //for (int tidEmulator = 0; tidEmulator < EMUTHREADS; tidEmulator++) {
+            for (int t = 0; t < EMUTHREADS; t++) {
+                //int tidEmulator = SystemConfig.coreAffinity[t];
+                int tidEmulator = t;
                 CircularPacketQueue fromEmulator = fromEmulatorAll
                         .get(tidEmulator);
                 
@@ -143,7 +146,9 @@ public class RunnableThread implements Encoding, Runnable {
                                      // comment
                 }
                 
-                int tidApplication = javaTid * EMUTHREADS + tidEmulator;
+                int tidApplication = javaTid * EMUTHREADS + t;                
+                //int tidApplication = javaTid * EMUTHREADS + t;
+                
                 int numReads = 0;
                 long v = 0;
                 
@@ -317,6 +322,15 @@ public class RunnableThread implements Encoding, Runnable {
         return false;
     }
     
+    public int getMapIndex(int[] map, int n) {
+        for (int tmp = 0; tmp < 64; ++tmp) {
+            if (map[tmp]==n) {
+                return tmp;
+            }
+        }
+        return -1;
+    }
+    
     // initialise a reader thread with the correct thread id and the buffer to
     // write the results in.
     public RunnableThread(String threadName, int javaTid, IpcBase ipcBase,
@@ -337,37 +351,32 @@ public class RunnableThread implements Encoding, Runnable {
         pipelineInterfaces = new PipelineInterface[EMUTHREADS];
         for (int i = 0; i < EMUTHREADS; i++) {
             int id = javaTid * EMUTHREADS + i;
-            
-            IpcBase.glTable.getStateTable().put(id, new ThreadState(id));
+
             emulatorThreadState[i] = new EmulatorThreadState();
             threadBlockState[i] = new ThreadBlockState();
             
             // TODO pipelineinterfaces & inputToPipeline should also be in the
             // IpcBase
             
-            // CORE AFFINITY
-            PipelineInterface pipeTmp = null;
-            int c = 0;
-            for (c = 0; c < cores.length; ++c) {
-                if (cores[c].getCore_number() == SystemConfig.coreAffinity[i]) {
-                    pipeTmp = cores[c].getPipelineInterface();
-                    break;
-                }
-            }
-            System.out.println(
-                    "[DEBUG] " + threadName + " id = " + id + " core = "
-                            + cores[c].getCore_number() + " (core affinity = "
-                            + SystemConfig.coreAffinity[i] + ")");
+            int coreAff = SystemConfig.coreAffinity[i];            
+            int coreMap = getMapIndex(SystemConfig.coreLayout, coreAff);
             
-            // pipelineInterfaces[i] = cores[i].getPipelineInterface();
-            pipelineInterfaces[i] = pipeTmp;
+            // CORE AFFINITY
+            System.out.println(
+                    "[DEBUG] " + threadName + " core[coreMap] = "
+                            + cores[coreMap].getCore_number() + " core affinity " + coreAff + "; thread = " + i);
+            
+            IpcBase.glTable.getStateTable().put(i, new ThreadState(id));
+
+            pipelineInterfaces[i] = cores[coreMap].getPipelineInterface();
+            //pipelineInterfaces[id_core] = core.getPipelineInterface();
             inputToPipeline[i] = new GenericCircularQueue<Instruction>(
                     Instruction.class, INSTRUCTION_THRESHOLD);
             
             // dynamicInstructionBuffer[i] = new DynamicInstructionBuffer();
             
-            GenericCircularQueue<Instruction>[] toBeSet = (GenericCircularQueue<Instruction>[]) Array
-                    .newInstance(GenericCircularQueue.class, 1);
+            GenericCircularQueue<Instruction>[] toBeSet = 
+                    (GenericCircularQueue<Instruction>[]) Array.newInstance(GenericCircularQueue.class, 1);
             toBeSet[0] = inputToPipeline[i];
             pipelineInterfaces[i].setInputToPipeline(toBeSet);
         }

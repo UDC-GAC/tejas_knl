@@ -91,7 +91,7 @@ public class SystemConfig {
     public static long                ddrAddr               = -1;
     public static long                ddrSize               = 0; // todo
     
-    public static long                mcdramStartAddr       = 0x3040000000L;
+    public static long                mcdramPhysStartAddr   = 0x3040000000L;
     public static HashMap<Long, Long> physAddr              = new HashMap<Long, Long>();
     
     public static Vector<Coherence>   chaList               = new Vector<Coherence>();
@@ -151,6 +151,8 @@ public class SystemConfig {
             57, 58, 59, 60, 61, 62, 63 };
     
     public static int[]               coreAffinity          = coreAffinityScatter;
+    
+    public static int[]               coreLayout            = coreAffinityLinear;
     
     public static String              addrFilePath          = "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/addr.txt";
     public static String              mapFilePath           = "/home/mhorro/mapping.knl";

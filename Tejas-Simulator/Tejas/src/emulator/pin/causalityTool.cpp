@@ -25,9 +25,9 @@ Jha, Kunal Kishore, Apoorva Temurnikar, Bhumika Singh, Sakshi Goel
 #include <fstream>
 #include <iostream>
 #include "pin.H"
-//#include "vtop.h"
-
 #include <fcntl.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #ifndef _WIN32
 #include <sys/resource.h>
@@ -64,6 +64,19 @@ OS_THREAD_ID father_id = INVALID_OS_THREAD_ID;
 #include <io.h>
 #endif
 
+// needed to check CPU
+static inline int
+get_cpu()
+{
+    #ifdef SYS_getcpu
+    int cpu, status;
+    status = syscall(SYS_getcpu, &cpu, NULL, NULL);
+    return (status == -1) ? status : cpu;
+    #else
+    return -1; // unavailable
+    #endif
+}
+
 /* ===================================================================== */
 /* Names of malloc and free */
 /* ===================================================================== */
@@ -77,7 +90,9 @@ OS_THREAD_ID father_id = INVALID_OS_THREAD_ID;
 
 #define ADDR_MCDRAM 0x3040000000
 #define ADDR_PATH "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/addr.txt"
+#define MEM_PATH "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/memtrace.txt"
 
+int memoryTrace = 0;
 long knlAllocSize = 0;
 
 // Defining  command line arguments
@@ -269,7 +284,19 @@ std::string pinpointsFilename;
 unsigned long *sliceArray;
 int numberOfSlices;
 int currentSlice;
+
+ofstream memfile;
+uint64_t start_addr;
+
 uint32_t *threadMapping;
+// BETTER IMPLEMENT THIS AD-HOC IN JAVA SIDE; MORE VERSATILE
+//uint32_t threadMapping[64] = {
+//		 0, 1, 20, 21,
+//		            28, 29, 50, 51, 56, 57, 36, 37, 44, 45, 62, 63, 48, 49, 24, 25, 4,
+//		            5, 10, 11, 16, 17, 40, 41, 32, 33, 58, 59, 18, 19, 42, 43, 60, 61,
+//		            54, 55, 34, 35, 12, 13, 6, 7, 26, 27, 46, 47, 14, 15, 8, 9, 38, 39,
+//		            30, 31, 2, 3, 22, 23, 52, 53
+//};
 bool *isThreadActive;
 long *parentId;
 long *currentId;
@@ -444,10 +471,10 @@ VOID ThreadStart(THREADID threadid, CONTEXT *ctxt, INT32 flags, VOID *v) {
   }
 
   threadAlive[threadid] = true;
-  cout << "threads till now " << numThreads << "\n";
-  fflush(stdout);
   pumpingStatus[i] = true;
   threadid = findThreadMapping(threadid);
+  cout << "threads till now " << numThreads << "; thread id (app) = " << threadid << "; core id (host) = " << get_cpu() << "\n";
+  fflush(stdout);
   tst->onThread_start(threadid);
   while (tst->analysisFn(threadid, parent, CHILD_START, PIN_GetParentTid()) ==
          -1) {
@@ -489,12 +516,19 @@ VOID RecordMemRead(THREADID tid, VOID *ip, VOID *addr) {
 
   sendTimerPacket(tid, false);
 
-  PIN_MutexLock(&mainLockForPintool);
-  checkSum += MEMREAD;
-  PIN_MutexUnlock(&mainLockForPintool);
-
   uint64_t nip = MASK & (uint64_t)ip;
   uint64_t naddr = MASK & (uint64_t)addr;
+
+  PIN_MutexLock(&mainLockForPintool);
+  checkSum += MEMREAD;
+  if (((uint64_t)naddr>=start_addr)&&(memoryTrace)) {
+	  memfile.open(MEM_PATH, ofstream::out | ofstream::app);
+	  memfile << tid << "\t" << (uint64_t)naddr << "\n";
+      memfile.close();
+  }
+
+  PIN_MutexUnlock(&mainLockForPintool);
+
   while (tst->analysisFn(tid, nip, MEMREAD, naddr) == -1) {
     PIN_Yield();
   }
@@ -840,19 +874,22 @@ VOID KNLbefore(CHAR *name, ADDRINT ptr, ADDRINT size) {
 
 VOID KNLafter(ADDRINT ret) {
   ofstream addrfile;
+  start_addr = ret;
   cout << "knl_alloc_data returns " << ret << endl;
   addrfile.open(ADDR_PATH, ofstream::out | ofstream::app);
   if (addrfile.is_open()) {
-    int npages = knlAllocSize / 4096;
+    //int npages = knlAllocSize / 4096;
+	int nlines = knlAllocSize / 64;
     int n;
     uint64_t base = ret;
     uint64_t phys = vtop(base);
     uint64_t virt = base;
-    for (n = 0; n < npages; ++n) {
+    for (n = 0; n < nlines; ++n) {
       phys = vtop(base);
       virt = base;
       addrfile << knlAllocSize << "\t" << virt << "\t" << phys << endl;
-      base += 4096;
+      //base += 4096;
+      base += 64;
     }
     cout << knlAllocSize << "\t" << virt << "\t" << phys << endl;
     addrfile.close();
@@ -1105,6 +1142,11 @@ int main(int argc, char *argv[]) {
   ofstream addrfile;
   addrfile.open(ADDR_PATH, ofstream::out | ofstream::trunc);
   addrfile.close();
+
+  ofstream memfile;
+  memfile.open(MEM_PATH, ofstream::out | ofstream::trunc);
+  memfile.close();
+
   // Knobs get initialized only after initializing PIN
 
   // if (numInsToIgnore>0)

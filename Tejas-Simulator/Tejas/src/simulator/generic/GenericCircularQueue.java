@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 
 public class GenericCircularQueue<E> {
 	
+        int threadId;
 	Class<E> type;
 	int head;
 	int tail;

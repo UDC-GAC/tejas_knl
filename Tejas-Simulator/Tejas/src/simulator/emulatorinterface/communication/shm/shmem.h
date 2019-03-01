@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../IPCBase.h"
+//#include "../IPCBase.h"
+#include "../common.h"
 #include "../../../../emulator/pin/encoding.h"
 
 #ifndef _WIN32
@@ -23,12 +24,13 @@ namespace tejas_win{
 #define COUNT	(1000)
 #define locQ	(50)
 #define shm_debug_queue (false)
+#define MaxThreads (10000)
 namespace IPC
 {
 
 
 
-class Shm : public IPCBase
+class Shm// : public IPCBase
 {
 protected:
 	#ifdef _WIN32
@@ -61,8 +63,8 @@ protected:
 public:
 	THREAD_DATA *tldata;
 //	uint32_t *memMapping;
-	Shm(int maxNumThreads, void (*lock)(int), void (*unlock)(int));
-	Shm(uint64_t, int maxNumThreads, void (*lock)(int), void (*unlock)(int));
+	Shm(int maxNumThreads /*, void (*lock)(int), void (*unlock)(int)*/);
+	Shm(uint64_t, int maxNumThreads /*, void (*lock)(int), void (*unlock)(int)*/);
 	Shm (uint32_t count,uint32_t localQueue, void (*lock)(int), void (*unlock)(int));
 	bool isSubsetsimCompleted(void);
 	bool setSubsetsimComplete(bool val);
@@ -73,12 +75,14 @@ public:
 	void onThread_start (int tid);
 	int onThread_finish (int tid, long numCISC);
 	int onSubset_finish (int tid, long numCISC);
-
 	int shmwrite (int tid, int last, long numCISC);
 	void get_lock(packet *map);
 	void release_lock(packet *map);
 	bool unload ();
 	~Shm ();
+
+	int MaxNumActiveThreads;
+	void print_thread_data(THREAD_DATA *);
 
 };
 
