@@ -267,7 +267,7 @@ public class InstructionClassTable {
 			instructionClassTable.put(returnOp[i], InstructionClass.RETURN);
 
 		//FIXME : movsx* does a sign-extend + move. Right now, we are doing move only.
-		String move[] = "mov|movsx|movsxd|movzx|movzxd|movsd|movnti".split("\\|");
+		String move[] = "mov|movsx|movsxd|movzx|movzxd|movsd|movnti|movslq|movzbl".split("\\|");
 		for (int i = 0; i < move.length; i++)
 			instructionClassTable.put(move[i], InstructionClass.MOVE);
 
@@ -294,7 +294,7 @@ public class InstructionClassTable {
 		for (int i = 0; i < push.length; i++)
 			instructionClassTable.put(push[i], InstructionClass.PUSH);
 
-		String call[] = "call".split("\\|");
+		String call[] = "call|callq".split("\\|");
 		for (int i = 0; i < call.length; i++)
 			instructionClassTable.put(call[i], InstructionClass.CALL);
 
@@ -401,7 +401,7 @@ public class InstructionClassTable {
 			instructionClassTable.put(repeat[i], InstructionClass.REPEAT);
 
 		// TODO SSE Instructions
-		String SSEMove[] = "movaps|movapd|movups|movupd|movhps|movhpd|movhlps|movlpd|movlhps|movlhpd|movlps|movlpd|movmskps|movmskpd|movss|movsd|movdqa|movdqu|movq2dq|movdq2q|movq"
+		String SSEMove[] = "movaps|movapd|movups|movupd|movhps|movhpd|movhlps|movlpd|movlhps|movlhpd|movlps|movlpd|movmskps|movmskpd|movss|movsd|movdqa|movdqu|movq2dq|movdq2q|movq|movl"
 				.split("\\|");
 		for (int i = 0; i < SSEMove.length; i++)
 			instructionClassTable.put(SSEMove[i], InstructionClass.SSE_MOVE);

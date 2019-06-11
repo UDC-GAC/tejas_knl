@@ -49,7 +49,7 @@ public class EventQueue
 
 		while(eventList.isEmpty()==false) {
 			Event e = eventList.pollFirst();
-			
+		        //if ((e!=null)&&(e.coreId==28)) System.out.println("[DEBUG] core 28 process");
 			e.getProcessingElement().handleEvent(this, e);
 			
 		}

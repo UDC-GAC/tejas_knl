@@ -45,11 +45,12 @@ public enum RequestType {
 	Tell_LSQ_Addr_Ready,
 	Validate_LSQ_Addr,
 	Attempt_L1_Issue,
-	Cache_Read,
 	
+	Cache_Read,
 	Cache_Write,
 
 	Mem_Response,
+
 	LSQ_Commit,
 	
 	//banked memory element's request types
@@ -79,7 +80,6 @@ public enum RequestType {
 	Reply_with_shared_copy,
 	Write_Modified_to_sharedmem, 
 	
-
 	TOKEN,
 	LOCAL_TOKEN,
 	PIPELINE_RESUME,

@@ -218,7 +218,9 @@ public class ObjParser
 			//Determine the instruction class for this instruction
 			InstructionClass instructionClass;
 			instructionClass = InstructionClassTable.getInstructionClass(operation);
-
+			if (instructionClass == InstructionClass.INVALID) {
+			    //System.out.println("[DEBUG] INSTRUCTIO " + operation + " is not valid!!!");
+			}
 			// Obtain a handler for this instruction
 			X86StaticInstructionHandler handler;
 			handler = InstructionClassTable.getInstructionClassHandler(instructionClass);
@@ -281,7 +283,7 @@ public class ObjParser
 
 	// runs obj-dump utility on the executable file to obtain the assembly code.
 	// The obj-dump output is then returned using a buffered reader.
-	private static BufferedReader readObjDumpOutput(String executableFileName) {
+	public static BufferedReader readObjDumpOutput(String executableFileName) {
 		BufferedReader input = null;
 
 		try {
@@ -330,7 +332,7 @@ public class ObjParser
 	}
 
 	// reads the next line of buffered reader "input"
-	private static String readNextLineOfObjDump(BufferedReader input) 
+	public static String readNextLineOfObjDump(BufferedReader input) 
 	{
 		try 
 		{
@@ -354,7 +356,7 @@ public class ObjParser
 
 	// checks if the passed line of objdump output matches the output for an
 	// assembly code.
-	private static boolean isContainingObjDumpAssemblyCode(String line) 
+	public static boolean isContainingObjDumpAssemblyCode(String line) 
 	{
 		if(objdumpAssemblyCodeMatcher==null) {
 			createObjdumpAssemblyCodeMatcher();
@@ -367,7 +369,7 @@ public class ObjParser
 
 	// for a line of assembly code, this would return the
 	// linear address, operation, operand1,operand2, operand3
-	private static String[] tokenizeObjDumpAssemblyCode(String line) 
+	public static String[] tokenizeObjDumpAssemblyCode(String line) 
 	{
 		String linearAddress;
 		String instructionPrefix;

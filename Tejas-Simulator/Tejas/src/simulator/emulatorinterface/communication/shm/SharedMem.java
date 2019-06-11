@@ -23,7 +23,7 @@ import generic.GenericCircularQueue;
 import generic.InstructionTable;
 
 
-public class SharedMem extends IpcBase
+public class SharedMem extends  IpcBase
 {
 	// Must ensure that this is same as COUNT in shmem.h
 	public static final int COUNT = 1000;
@@ -181,7 +181,7 @@ public class SharedMem extends IpcBase
 	// Petersons lock.
 	native static void asmmfence();
 	
-        native static int numPacketsAlternate(int tidApp); 
+	native static int numPacketsAlternate(int tidApp);
 
 	// get a lock to access a resource shared between PIN and java. For an explanation of the 
 	// shared memory segment structure which explains the parameters passed to the shmwrite 

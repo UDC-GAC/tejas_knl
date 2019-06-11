@@ -24,7 +24,9 @@ import memorysystem.CoreMemorySystem;
 import dram.MainMemoryDRAMController;
 import memorysystem.MemorySystem;
 import memorysystem.MainMemoryController;
+import memorysystem.coherence.CHA;
 import memorysystem.coherence.Coherence;
+import memorysystem.coherence.Directory;
 import memorysystem.nuca.NucaCache;
 import net.Bus;
 import net.BusInterface;
@@ -153,6 +155,13 @@ public class ArchitecturalComponent {
         int numRows = ((NOC) interconnect).getNumRows();
         int numColumns = ((NOC) interconnect).getNumColumns();
         int t = 0;
+        // workaround...
+        for(CacheConfig config : SystemConfig.sharedCacheConfigs) {
+            if (config.isDirectory) {
+                SystemConfig.globalDir = new Directory("GlobalDir", 0, config, null);
+                break;
+            }
+        }
         SystemConfig.nTiles = (int) SystemConfig.NoOfCores / 2;
         for (int i = 0; i < numRows; i++) {
             String str = null;
@@ -165,7 +174,7 @@ public class ArchitecturalComponent {
             
             // StringTokenizer st = new StringTokenizer(str," ");
             StringTokenizer st = new StringTokenizer(str);
-            
+                        
             for (int j = 0; j < numColumns; j++) {
                 String nextElementToken = (String) st.nextElement();
                 
@@ -202,7 +211,7 @@ public class ArchitecturalComponent {
                     Cache c = MemorySystem.createSharedCacheCores("L2",
                             SystemConfig.mappingCHA[t], comInterface);
                     Coherence cha = MemorySystem.createCHA("CHA",
-                            SystemConfig.mappingCHA[t], comInterface);
+                            SystemConfig.mappingCHA[t], comInterface, c);
                     t++;
                     c.setCoherence(cha);
                     SystemConfig.chaList.add(cha);
@@ -212,7 +221,7 @@ public class ArchitecturalComponent {
                     Cache c = MemorySystem.createSharedCacheCores("L2",
                             SystemConfig.mappingCHA[t], comInterface);
                     Coherence cha = MemorySystem.createCHA("CHA",
-                            SystemConfig.mappingCHA[t], comInterface);
+                            SystemConfig.mappingCHA[t], comInterface, c);
                     t++;
                     c.setCoherence(cha);
                     SystemConfig.chaList.add(cha);

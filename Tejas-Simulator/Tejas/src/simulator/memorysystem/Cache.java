@@ -36,11 +36,10 @@ import main.ArchitecturalComponent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
-
-import java.util.Arrays;
 
 import net.ID;
 import net.NocInterface;
@@ -73,28 +72,24 @@ public class Cache extends SimulationElement {
     public Coherence               mycoherence;
     
     // public CacheType levelFromTop;
-    public boolean                 isLastLevel; // Tells whether there are any
+    public boolean                 isLastLevel; // Tells whether there are
+                                                // any
                                                 // more levels of
                                                 // cache
-    public CacheConfig.WritePolicy writePolicy; // WRITE_BACK or WRITE_THROUGH
+    public CacheConfig.WritePolicy writePolicy; // WRITE_BACK or
+                                                // WRITE_THROUGH
     public String                  nextLevelName; // Name of the next level
                                                   // cache according to
                                                   // the configuration file
-    public ArrayList<Cache>        prevLevel       = new ArrayList<Cache>(); // Points
-                                                                             // towards
-                                                                             // the
-                                                                             // previous
-                                                                             // level
-                                                                             // in
-                                                                             // the
-                                                                             // cache
-                                                                             // hierarchy
-    public Cache                   nextLevel; // Points towards the next level
+    public ArrayList<Cache>        prevLevel       = new ArrayList<Cache>();
+    public Cache                   nextLevel; // Points towards the next
+                                              // level
                                               // in the cache
                                               // hierarchy
     protected CacheLine            lines[];
     
     public long                    noOfRequests;
+    public long[]                  reqCHA          = new long[38];
     public long                    noOfAccesses;
     public long                    noOfResponsesReceived;
     public long                    noOfResponsesSent;
@@ -111,6 +106,10 @@ public class Cache extends SimulationElement {
     CacheEnergyConfig              energy;
     
     public String                  cacheName;
+    
+    public HashMap<Long, Long>     outstanding     = new HashMap<Long, Long>();
+    public Long                    meanOutstanding = 0L;
+    public Long                    nRequests       = 0L;
     
     public void createLinkToNextLevelCache(Cache nextLevelCache) {
         this.nextLevel = nextLevelCache;
@@ -170,8 +169,6 @@ public class Cache extends SimulationElement {
         if (this.containingMemSys == null) {
             // Use the core memory system of core 0 for all the shared caches.
             this.isSharedCache = true;
-            // this.containingMemSys =
-            // ArchitecturalComponent.getCore(0).getExecEngine().getCoreMemorySystem();
         }
         
         this.cacheName = cacheName;
@@ -292,14 +289,6 @@ public class Cache extends SimulationElement {
         
         if (cl == null) {
             misc.Error.showErrorAndExit("Ack write hit expects cache line");
-            // writehit expects a line to be present
-            if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
-                fillAndSatisfyRequests(addr);
-                return;
-            } else {
-                event.setEventTime(event.getEventTime() + 1);
-                return;
-            }
         } else {
             processEventsInMSHR(addr);
         }
@@ -333,7 +322,14 @@ public class Cache extends SimulationElement {
         }
         
         updateStateOfCacheLine(addr, MESIF.FORWARD);
-        
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        if (dirEntry != null) {
+            dirEntry.addSharer(cache);
+            dirEntry.setState(MESIF.FORWARD);
+        } else {
+            // this should never happen
+            fill(addr, MESIF.FORWARD, SystemConfig.globalDir);
+        }
         this.sendEvent(event);
     }
     
@@ -363,33 +359,36 @@ public class Cache extends SimulationElement {
         
         // IF HIT
         if (cl != null) {
-            this.hits++;
             cacheHit(addr, requestType, cl, event);
         } else {
-            this.misses++;
+            // this.misses++; /* this counts writes + misses */
             if (this.mycoherence != null) {
                 if (requestType == RequestType.Cache_Write) {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
+                    this.misses++;
+                    this.outstanding.put(addr, GlobalClock.getCurrentTime());
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
+                if ((requestType == RequestType.Cache_Read)) {
+                    this.misses++;
+                }
                 sendRequestToNextLevel(addr, RequestType.Cache_Read, event);
             }
             
             mshr.addToMSHR(event);
+            // will this fix counting issue??
+            this.noOfAccesses--;
         }
     }
     
     protected void cacheHit(long addr, RequestType requestType, CacheLine cl,
             AddressCarryingEvent event) {
-        //hits++;
+        
         noOfRequests++;
-        //noOfAccesses++;
-        // if (this.isLastLevel)
-        // System.out.println(
-        // "cacheHit " + this.toString() + " from " + event.coreId);
         if (requestType == RequestType.Cache_Read) {
+            this.hits++;
             sendAcknowledgement(event);
         } else if (requestType == RequestType.Cache_Write) {
             if (this.writePolicy == WritePolicy.WRITE_THROUGH) {
@@ -410,7 +409,12 @@ public class Cache extends SimulationElement {
     
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
-        
+        Long tStart;
+        if ((tStart = this.outstanding.get(addr)) != null) {
+            Long delta = GlobalClock.getCurrentTime() - tStart;
+            this.meanOutstanding = (this.meanOutstanding * nRequests + delta) / (nRequests+1);
+            this.nRequests++;
+        }
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
             this.fillAndSatisfyRequests(addr);
@@ -443,11 +447,14 @@ public class Cache extends SimulationElement {
             }
             addEventAtLowerCache(event, c);
         } else {
-            Core core = main.ArchitecturalComponent.getCores()[0];
+            Core core = main.ArchitecturalComponent.getCores()[0]; // to ensure
+                                                                   // that
+                                                                   // always has
+                                                                   // a core to
+                                                                   // send...
             if (e != null) {
                 core = ArchitecturalComponent.getCore(e.coreId);
             }
-            // added later by kush
             MainMemoryDRAMController memController;
             if (SystemConfig.mcdramAddr == -1) {
                 checkAddr();
@@ -479,35 +486,24 @@ public class Cache extends SimulationElement {
             br = new BufferedReader(new FileReader(orgFile));
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
-            
-            long mAddr = -1;
-            long mSize = 0;
-            long dAddr = -1;
-            long dSize = 0;
-            
+            StringTokenizer st = new StringTokenizer(line, "\t");
+            long size = Long.parseLong(st.nextToken());
+            long virt = Long.parseLong(st.nextToken());
+            long phys = Long.parseLong(st.nextToken());
+            SystemConfig.physAddr.put(virt, phys);
+            SystemConfig.mcdramAddr = virt;
+            line = br.readLine();
             while (line != null) {
-                StringTokenizer st = new StringTokenizer(line, "\t");
-                String module = st.nextToken();
-                long size = Long.parseLong(st.nextToken());
-                long addr = Long.parseLong(st.nextToken());
-                if (module.equals("MCDRAM")) {
-                    mSize += size;
-                    if (mAddr == -1)
-                        mAddr = addr;
-                }
-                if (module.equals("DDR")) {
-                    dSize += size;
-                    if (dAddr == -1)
-                        dAddr = addr;
-                }
+                st = new StringTokenizer(line, "\t");
+                size = Long.parseLong(st.nextToken());
+                virt = Long.parseLong(st.nextToken());
+                phys = Long.parseLong(st.nextToken());
+                SystemConfig.physAddr.put(virt, phys);
                 line = br.readLine();
             }
-            SystemConfig.setMCDRAMaddr(mAddr);
-            SystemConfig.setMCDRAMsize(mSize);
-            SystemConfig.setDDRsize(dSize);
-            SystemConfig.setDDRaddr(dAddr);
         } catch (Exception e) {
-            System.out.println("Something went wrong with addr.txt file...");
+            // ugly hack...
+            SystemConfig.mcdramAddr = 0;
         } finally {
             try {
                 br.close();
@@ -634,11 +630,10 @@ public class Cache extends SimulationElement {
     public void fillAndSatisfyRequests(long addr) {
         int numPendingEvents = mshr.getNumPendingEventsForAddr(addr);
         // WHY ARE NUMPENDING EVENTS ADDED?
-        //misses += numPendingEvents;
-        //noOfRequests += numPendingEvents;
-        //noOfAccesses += 1 + numPendingEvents;
+        // misses += numPendingEvents;
+        // noOfRequests += numPendingEvents;
+        // noOfAccesses += 1 + numPendingEvents;
         noOfRequests += numPendingEvents;
-        //noOfAccesses++;
         
         CacheLine evictedLine = this.fill(addr, MESIF.SHARED);
         handleEvictedLine(evictedLine);
@@ -734,7 +729,7 @@ public class Cache extends SimulationElement {
             if (event.coreId != -1)
                 mshr.addToMSHR(event);
         } else {
-            System.out.println(RequestType.Cache_Write);
+            // System.out.println(RequestType.Cache_Write);
             sendRequestToNextLevel(addr, RequestType.Cache_Write, event);
         }
     }
@@ -817,6 +812,25 @@ public class Cache extends SimulationElement {
             int index = getNextIdx(startIdx, idx);
             // fetch the cache line
             CacheLine ll = this.lines[index];
+            // If the tag is matching, we have a hit
+            if (ll.hasTagMatch(tag)) {
+                return ll;
+            }
+        }
+        return null;
+    }
+    
+    public CacheLine access(long addr, Cache c) {
+        /* compute startIdx and the tag */
+        int startIdx = getStartIdx(addr);
+        long tag = computeTag(addr);
+        
+        /* search in a set */
+        for (int idx = 0; idx < assoc; idx++) {
+            // calculate the index
+            int index = getNextIdx(startIdx, idx);
+            // fetch the cache line
+            CacheLine ll = c.lines[index];
             // If the tag is matching, we have a hit
             if (ll.hasTagMatch(tag)) {
                 return ll;
@@ -929,6 +943,79 @@ public class Cache extends SimulationElement {
         return evictedLine;
     }
     
+    public CacheLine fill(long addr, MESIF stateToSet, Cache c) {
+        CacheLine evictedLine = null;
+        /* compute startIdx and the tag */
+        int startIdx = getStartIdx(addr);
+        long tag = computeTag(addr);
+        boolean addressAlreadyPresent = false;
+        /* find any invalid lines -- no eviction */
+        CacheLine fillLine = null;
+        boolean evicted = false;
+        
+        // ------- Check if address is in cache ---------
+        for (int idx = 0; idx < assoc; idx++) {
+            int nextIdx = getNextIdx(startIdx, idx);
+            CacheLine ll = c.lines[nextIdx];
+            if (ll.getTag() == tag) {
+                addressAlreadyPresent = true;
+                fillLine = ll;
+                break;
+            }
+        }
+        
+        // ------- Check if there's an invalid line ---------
+        for (int idx = 0; !addressAlreadyPresent && idx < assoc; idx++) {
+            int nextIdx = getNextIdx(startIdx, idx);
+            CacheLine ll = c.lines[nextIdx];
+            if (ll.isValid() == false
+                    && mshr.isAddrInMSHR(ll.getAddress()) == false
+                    || (c.nucaType != NucaType.NONE && ll.isValid() == false)) {
+                fillLine = ll;
+                break;
+            }
+        }
+        
+        // ------- Check if there's an unlocked valid line ---------
+        if (fillLine == null) {
+            evicted = true; // We need eviction in this case
+            double minTimeStamp = Double.MAX_VALUE;
+            for (int idx = 0; idx < assoc; idx++) {
+                int index = getNextIdx(startIdx, idx);
+                CacheLine ll = c.lines[index];
+                
+                if (mshr.isAddrInMSHR(ll.getAddress()) == true) {
+                    continue;
+                }
+                
+                if (minTimeStamp > ll.getTimestamp()) {
+                    minTimeStamp = ll.getTimestamp();
+                    fillLine = ll;
+                }
+            }
+        }
+        
+        if (fillLine == null) {
+            misc.Error.showErrorAndExit("Unholy mess !!");
+        }
+        
+        /* if there has been an eviction */
+        if (evicted) {
+            evictedLine = (CacheLine) fillLine.clone();
+            long evictedLinetag = evictedLine.getTag();
+            evictedLinetag = (evictedLinetag << numSetsBits)
+                    + (startIdx / assoc);
+            evictedLine.setTag(evictedLinetag);
+            c.evictions++;
+        }
+        
+        /* This is the new fill line */
+        fillLine.setState(stateToSet);
+        fillLine.setAddress(addr);
+        mark(fillLine, tag);
+        return evictedLine;
+    }
+    
     public LinkedList<AddressCarryingEvent> eventsWaitingOnMSHR = new LinkedList<AddressCarryingEvent>();
     
     public String toString() {
@@ -946,6 +1033,16 @@ public class Cache extends SimulationElement {
     
     public void updateStateOfCacheLine(long addr, MESIF newState) {
         CacheLine cl = this.access(addr);
+        // added by markos (supporting distributed directory)
+        if (mycoherence != null) {
+            CacheLine dirEntry = access(addr, (Cache) mycoherence);
+            if (dirEntry != null) {
+                dirEntry.setState(newState);
+            }
+        }
+        CacheLine dirEntry = access(addr, SystemConfig.globalDir);
+        if (dirEntry != null)
+            dirEntry.setState(newState);
         if (cl != null) {
             cl.setState(newState);
             if (newState == MESIF.INVALID && mshr.isAddrInMSHR(addr)) {
