@@ -178,8 +178,6 @@ uint64_t virt_to_phys(int fd, uint64_t virtaddr) {
   pagesize = (int)sysconf(_SC_PAGESIZE);
   /* see: linux/Documentation/vm/pagemap.txt */
   tbloff = virtaddr / pagesize * sizeof(uint64_t);
-  // dprintf("pagesize:%d, virt:0x%08llx, tblent:0x%08llx\n",
-  // pagesize, (long long)virtaddr, (long long)tbloff);
 
   offset = lseek(fd, tbloff, SEEK_SET);
   if ((long int)offset == (off_t)-1) {
@@ -287,16 +285,8 @@ int currentSlice;
 
 ofstream memfile;
 uint64_t start_addr;
-
 uint32_t *threadMapping;
-// BETTER IMPLEMENT THIS AD-HOC IN JAVA SIDE; MORE VERSATILE
-//uint32_t threadMapping[64] = {
-//		 0, 1, 20, 21,
-//		            28, 29, 50, 51, 56, 57, 36, 37, 44, 45, 62, 63, 48, 49, 24, 25, 4,
-//		            5, 10, 11, 16, 17, 40, 41, 32, 33, 58, 59, 18, 19, 42, 43, 60, 61,
-//		            54, 55, 34, 35, 12, 13, 6, 7, 26, 27, 46, 47, 14, 15, 8, 9, 38, 39,
-//		            30, 31, 2, 3, 22, 23, 52, 53
-//};
+
 bool *isThreadActive;
 long *parentId;
 long *currentId;
@@ -337,44 +327,11 @@ void unlockIAmWriting(int tid) {
 }
 
 void waitForThreadsAndTerminatePin() {
-  /*
-    // Iterate over all the threads
-    // If each thread is in non-alive status, terminate PIN
-    for (int tid = 0; tid < MaxNumActiveThreads; tid++) {
-  #ifdef _WIN32
-      tejas_win::EnterCriticalSection(&lockForWritingToCommunicationStream[tid]);
-  #else
-      pthread_mutex_lock(&lockForWritingToCommunicationStream[tid]);
-  #endif
-    }
-  */
   tst->unload();
 
   exit(0);
 }
 
-// needs -lrt (real-time lib)
-// 1970-01-01 epoch UTC time, 1 nanosecond resolution
-
-// modified for mac by shikhar
-
-/*
-#ifndef _WIN32  // OS X does not have clock_gettime, use clock_get_time
-void current_utc_time(timespec *ts) {
-#ifdef __MACH__
-  clock_serv_t cclock;
-  mach_timespec_t mts;
-  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-  clock_get_time(cclock, &mts);
-  mach_port_deallocate(mach_task_self(), cclock);
-  ts->tv_sec = mts.tv_sec;
-  ts->tv_nsec = mts.tv_nsec;
-#else
-  clock_gettime(CLOCK_REALTIME, ts);
-#endif
-}
-#endif
-*/
 
 int time_ctr = 0;
 uint64_t ClockGetTime() {
@@ -383,9 +340,6 @@ uint64_t ClockGetTime() {
   tejas_win::GetSystemTime(&st);
   return st.wMilliseconds * 1000000;
 #else
-  //  struct timespec ts;
-  //  current_utc_time(&ts);
-  //  return (uint64_t)ts.tv_sec * 1000000000LL + (uint64_t)ts.tv_nsec;
   return time_ctr++;
 #endif
 }
@@ -912,41 +866,27 @@ void Image(IMG img, VOID *v) {
     RTN_Close(funcRtn);
   }
 
-  //  RTN knlRtn = RTN_FindByName(img, "knl_alloc_data");
-  //  if (RTN_Valid(knlRtn)) {
-  //    // Instrument malloc() to print the input argument value and the return
-  //    // value.
-  //    RTN_InsertCall(knlRtn, IPOINT_BEFORE, (AFUNPTR)KNLbefore, IARG_PTR,
-  //                   "knl_alloc_data", IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-  //                   IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-  //    RTN_InsertCall(knlRtn, IPOINT_AFTER, (AFUNPTR)KNLafter,
-  //                   IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
-  //
-  //    RTN_Close(knlRtn);
-  //    return;
-  //  }
-
-  // Instrument the malloc() and free() functions.  Print the input argument
-  // of each malloc() or free(), and the return value of malloc().
-  //
-  //  Find the malloc() function.
-  RTN mallocRtn = RTN_FindByName(img, "malloc");
-  if (RTN_Valid(mallocRtn)) {
-    RTN_Open(mallocRtn);
-
-    // Instrument malloc() to print the input argument value and the return
-    // value. RTN_InsertCall(mallocRtn, IPOINT_BEFORE, (AFUNPTR)MallocBefore,
-    // 		   IARG_ADDRINT, MALLOC,
-    // 		   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-    // 		   IARG_END);
-    // RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter,
-    //               IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
-
-    RTN_Close(mallocRtn);
-    searchMalloc = false;
-    mcdramMalloc = false;
-    ddrMalloc = false;
-  }
+//  // Instrument the malloc() and free() functions.  Print the input argument
+//  // of each malloc() or free(), and the return value of malloc().
+//  //
+//  //  Find the malloc() function.
+//  RTN mallocRtn = RTN_FindByName(img, "malloc");
+//  if (RTN_Valid(mallocRtn)) {
+//    RTN_Open(mallocRtn);
+//
+//    // Instrument malloc() to print the input argument value and the return
+//    // value. RTN_InsertCall(mallocRtn, IPOINT_BEFORE, (AFUNPTR)MallocBefore,
+//    // 		   IARG_ADDRINT, MALLOC,
+//    // 		   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
+//    // 		   IARG_END);
+//    RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter,
+//                   IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
+//
+//    RTN_Close(mallocRtn);
+//    searchMalloc = false;
+//    mcdramMalloc = false;
+//    ddrMalloc = false;
+//  }
 
   // RTN_Name(rtn)
 
