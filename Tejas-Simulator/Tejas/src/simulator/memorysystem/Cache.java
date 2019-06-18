@@ -36,6 +36,7 @@ import main.ArchitecturalComponent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -71,15 +72,18 @@ public class Cache extends SimulationElement {
     public Coherence               mycoherence;
     
     // public CacheType levelFromTop;
-    public boolean                 isLastLevel; // Tells whether there are any
+    public boolean                 isLastLevel; // Tells whether there are
+                                                // any
                                                 // more levels of
                                                 // cache
-    public CacheConfig.WritePolicy writePolicy; // WRITE_BACK or WRITE_THROUGH
+    public CacheConfig.WritePolicy writePolicy; // WRITE_BACK or
+                                                // WRITE_THROUGH
     public String                  nextLevelName; // Name of the next level
                                                   // cache according to
                                                   // the configuration file
     public ArrayList<Cache>        prevLevel       = new ArrayList<Cache>();
-    public Cache                   nextLevel; // Points towards the next level
+    public Cache                   nextLevel; // Points towards the next
+                                              // level
                                               // in the cache
                                               // hierarchy
     protected CacheLine            lines[];
@@ -102,6 +106,10 @@ public class Cache extends SimulationElement {
     CacheEnergyConfig              energy;
     
     public String                  cacheName;
+    
+    public HashMap<Long, Long>     outstanding     = new HashMap<Long, Long>();
+    public Long                    meanOutstanding = 0L;
+    public Long                    nRequests       = 0L;
     
     public void createLinkToNextLevelCache(Cache nextLevelCache) {
         this.nextLevel = nextLevelCache;
@@ -359,6 +367,7 @@ public class Cache extends SimulationElement {
                     mycoherence.writeMiss(addr, event, this);
                 } else if (requestType == RequestType.Cache_Read) {
                     this.misses++;
+                    this.outstanding.put(addr, GlobalClock.getCurrentTime());
                     mycoherence.readMiss(addr, event, this);
                 }
             } else {
@@ -400,7 +409,12 @@ public class Cache extends SimulationElement {
     
     protected void handleMemResponse(AddressCarryingEvent memResponseEvent) {
         long addr = memResponseEvent.getAddress();
-        
+        Long tStart;
+        if ((tStart = this.outstanding.get(addr)) != null) {
+            Long delta = GlobalClock.getCurrentTime() - tStart;
+            this.meanOutstanding = (this.meanOutstanding * nRequests + delta) / (nRequests+1);
+            this.nRequests++;
+        }
         if (isThereAnUnlockedOrInvalidEntryInCacheSet(addr)) {
             noOfResponsesReceived++;
             this.fillAndSatisfyRequests(addr);

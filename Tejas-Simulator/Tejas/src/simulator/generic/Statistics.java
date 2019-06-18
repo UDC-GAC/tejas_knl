@@ -486,6 +486,11 @@ public class Statistics {
                 printCacheCHAStats(c);
             }
             
+            outputFileWriter.write("\n\n[L2 outstanding]\n\n");
+            for (Cache c : ArchitecturalComponent.getSharedCacheList()) {
+                outputFileWriter.write("L2["+ c.id +"] \t" + c.meanOutstanding + " for " + c.nRequests + "\n");
+            }
+            
             outputFileWriter.write("\n\n[Consolidated Stats For Caches]\n\n");
             for (Map.Entry<String, Vector<Cache>> entry : consolidatedCacheList
                     .entrySet()) {
