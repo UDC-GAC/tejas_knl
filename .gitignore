@@ -1,3 +1,11 @@
+*.html
+*.css
+*.s
+*/article/*
+*.obj
+*.csv
+*.pyc
+*.jar
 *.class
 *~
 *outputs*
