@@ -25,8 +25,10 @@ Jha, Kunal Kishore, Apoorva Temurnikar, Bhumika Singh, Sakshi Goel
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <fstream>
 #include <iostream>
+
 #include "pin.H"
 
 #ifndef _WIN32
@@ -40,6 +42,7 @@ Jha, Kunal Kishore, Apoorva Temurnikar, Bhumika Singh, Sakshi Goel
 #endif
 
 #include <time.h>
+
 #include <cstdlib>
 #include <cstring>
 // #include <sys/timeb.h>
@@ -64,6 +67,7 @@ OS_THREAD_ID father_id = INVALID_OS_THREAD_ID;
 #include <io.h>
 #endif
 
+// needed to check CPU
 static inline int get_cpu() {
 #ifdef SYS_getcpu
   int cpu, status;
@@ -89,6 +93,7 @@ static inline int get_cpu() {
 #define ADDR_PATH "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/addr.txt"
 #define MEM_PATH "/home/mhorro/tejas-git/Tejas-Simulator/Tejas/memtrace.txt"
 
+int memoryTrace = 0;
 long knlAllocSize = 0;
 
 // Defining  command line arguments
@@ -289,7 +294,8 @@ uint32_t *threadMapping;
 // uint32_t threadMapping[64] = {
 //		 0, 1, 20, 21,
 //		            28, 29, 50, 51, 56, 57, 36, 37, 44, 45, 62, 63, 48,
-// 49, 24, 25, 4, 		            5, 10, 11, 16, 17, 40, 41, 32, 33, 58,
+// 49, 24, 25, 4, 		            5, 10, 11, 16, 17, 40, 41, 32, 33,
+// 58,
 // 59, 18, 19, 42, 43, 60, 61, 		            54, 55, 34, 35, 12, 13, 6,
 // 7, 26, 27, 46, 47, 14, 15, 8, 9, 38, 39, 		            30, 31, 2,
 // 3, 22, 23, 52, 53
@@ -537,7 +543,6 @@ VOID RecordMemRead(THREADID tid, VOID *ip, VOID *addr) {
 VOID RecordMemWrite(THREADID tid, VOID *ip, VOID *addr) {
   tid = findThreadMapping(tid);
   if (!isActive(tid)) return;
-
   if (instructionIgnorePhase) return;
 
   if (outOfROIPhase) return;
@@ -911,41 +916,28 @@ void Image(IMG img, VOID *v) {
     RTN_Close(funcRtn);
   }
 
-  //  RTN knlRtn = RTN_FindByName(img, "knl_alloc_data");
-  //  if (RTN_Valid(knlRtn)) {
+  //  // Instrument the malloc() and free() functions.  Print the input argument
+  //  // of each malloc() or free(), and the return value of malloc().
+  //  //
+  //  //  Find the malloc() function.
+  //  RTN mallocRtn = RTN_FindByName(img, "malloc");
+  //  if (RTN_Valid(mallocRtn)) {
+  //    RTN_Open(mallocRtn);
+  //
   //    // Instrument malloc() to print the input argument value and the return
-  //    // value.
-  //    RTN_InsertCall(knlRtn, IPOINT_BEFORE, (AFUNPTR)KNLbefore, IARG_PTR,
-  //                   "knl_alloc_data", IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-  //                   IARG_FUNCARG_ENTRYPOINT_VALUE, 1, IARG_END);
-  //    RTN_InsertCall(knlRtn, IPOINT_AFTER, (AFUNPTR)KNLafter,
+  //    // value. RTN_InsertCall(mallocRtn, IPOINT_BEFORE,
+  //    (AFUNPTR)MallocBefore,
+  //    // 		   IARG_ADDRINT, MALLOC,
+  //    // 		   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
+  //    // 		   IARG_END);
+  //    RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter,
   //                   IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
   //
-  //    RTN_Close(knlRtn);
-  //    return;
+  //    RTN_Close(mallocRtn);
+  //    searchMalloc = false;
+  //    mcdramMalloc = false;
+  //    ddrMalloc = false;
   //  }
-
-  // Instrument the malloc() and free() functions.  Print the input argument
-  // of each malloc() or free(), and the return value of malloc().
-  //
-  //  Find the malloc() function.
-  RTN mallocRtn = RTN_FindByName(img, "malloc");
-  if (RTN_Valid(mallocRtn)) {
-    RTN_Open(mallocRtn);
-
-    // Instrument malloc() to print the input argument value and the return
-    // value. RTN_InsertCall(mallocRtn, IPOINT_BEFORE, (AFUNPTR)MallocBefore,
-    // 		   IARG_ADDRINT, MALLOC,
-    // 		   IARG_FUNCARG_ENTRYPOINT_VALUE, 0,
-    // 		   IARG_END);
-    // RTN_InsertCall(mallocRtn, IPOINT_AFTER, (AFUNPTR)MallocAfter,
-    //               IARG_FUNCRET_EXITPOINT_VALUE, IARG_END);
-
-    RTN_Close(mallocRtn);
-    searchMalloc = false;
-    mcdramMalloc = false;
-    ddrMalloc = false;
-  }
 
   // RTN_Name(rtn)
 

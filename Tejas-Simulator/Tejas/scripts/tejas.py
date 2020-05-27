@@ -7,24 +7,31 @@ import matplotlib.pyplot as plt
 import re
 import copy
 
-def main(f):
-    # python 2 vs python 3
+    # translations
+translations = {'dTLB': ['tlb','data'],
+                'iTLB': ['tlb','instr'],
+                'L1': ['l1','data'],
+                'I1': ['l1','instr'],
+                'ReadMiss': ['readmiss'],
+                'WriteMiss': ['writemiss'],
+                'WriteHit': ['writehit'],
+                'EvictionFromCoherentCache': ['evictcoherent'],
+                'EvictionFromSharedCache': ['evictshared']}
+
+tile_map_knl = [[-1]*7,\
+                [-1,0,12,-1,-1,13,29],\
+                [-1,4,16,28,1,17,33],\
+                [-1,8,20,32,5,21,37],\
+                [-1,-1,24,36,9,25,-1],\
+                [-1,2,14,26,3,15,27],\
+                [-1,6,18,30,7,19,31],\
+                [-1,10,22,34,11,23,35]]
+
+def parse(f):
     try:
         xrange
-    except NameError:
+    except BaseException:
         xrange = range
-    
-    # translations
-    translations = {'dTLB': ['tlb','data'],
-                    'iTLB': ['tlb','instr'],
-                    'L1': ['l1','data'],
-                    'I1': ['l1','instr'],
-                    'ReadMiss': ['readmiss'],
-                    'WriteMiss': ['writemiss'],
-                    'WriteHit': ['writehit'],
-                    'EvictionFromCoherentCache': ['evictcoherent'],
-                    'EvictionFromSharedCache': ['evictshared']}
-    
     core_timing_stats = False
     core_memory_stats = False
     tile_memory_stats = False
@@ -32,22 +39,14 @@ def main(f):
     
     core_n = -1
     tile_n = -1
-    
-    tile_map_knl = [[-1]*7,\
-                    [-1,0,12,-1,-1,13,29],\
-                    [-1,4,16,28,1,17,33],\
-                    [-1,8,20,32,5,21,37],\
-                    [-1,-1,24,36,9,25,-1],\
-                    [-1,2,14,26,3,15,27],\
-                    [-1,6,18,30,7,19,31],\
-                    [-1,10,22,34,11,23,35]]
+
     
     router_access = np.zeros(9*8).reshape(9,8)
     router_collision = np.zeros(9*8).reshape(9,8)
     
     ###############################
     # core memory stats
-    tmp_df = pd.DataFrame(index=xrange(64), columns=['hits','misses'])
+    tmp_df = pd.DataFrame(index=xrange(64), columns=['hits','misses','acc'])
     tmp_df = pd.concat({'instr': tmp_df, 'data': tmp_df},axis=1)
     tmp_df = pd.concat({'tlb': tmp_df, 'l1': tmp_df}, axis=1)
     mem_tmp_df = pd.concat({'main':\
@@ -128,9 +127,12 @@ def main(f):
             if stat in leaf_col:
                 value = float(l.split("=")[1].strip().split(" ")[0])
                 core['timing'].loc[core_n,stat] = value
-    
+                
         # Parse tile params
         if core_memory_stats:
+            if "Memory Requests" in l:
+                value = int(re.findall(r'\d+',l)[0])
+                core['memory'].loc[core_n,('l1','data','acc')] = value
             if "Accesses from each core to each MCDRAM module" in l:
                 core_memory_stats = False
                 continue
@@ -212,7 +214,8 @@ def main(f):
     return core,tile
 
 if __name__=="__main__":
-    main(sys.argv[1])
+    # python 2 vs python 3
+    parse(sys.argv[1])
     
 
 
